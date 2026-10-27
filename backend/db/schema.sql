@@ -37,6 +37,7 @@ CREATE INDEX ix_websocket_tickets_expires_at ON websocket_tickets (expires_at);
 
 CREATE TABLE movies (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    tmdb_id bigint UNIQUE,
     title varchar(240) NOT NULL,
     description text,
     director varchar(160),
@@ -53,6 +54,27 @@ CREATE TABLE movies (
 CREATE INDEX ix_movies_title ON movies (title);
 CREATE INDEX ix_movies_genre ON movies (genre);
 CREATE INDEX ix_movies_status ON movies (status);
+
+CREATE TABLE casts (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    tmdb_id bigint NOT NULL UNIQUE,
+    name varchar(200) NOT NULL,
+    original_name varchar(200),
+    known_for_department varchar(80),
+    gender integer,
+    profile_path varchar(2048),
+    popularity double precision
+);
+
+CREATE TABLE movie_cast (
+    movie_id uuid NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+    cast_id uuid NOT NULL REFERENCES casts(id) ON DELETE CASCADE,
+    character text,
+    cast_order integer NOT NULL DEFAULT 0,
+    credit_id varchar(64),
+    PRIMARY KEY (movie_id, cast_id)
+);
+CREATE INDEX ix_movie_cast_cast_id ON movie_cast (cast_id);
 
 CREATE TABLE cinemas (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -213,6 +235,8 @@ ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE auth_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE websocket_tickets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE movies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE casts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE movie_cast ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cinemas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE halls ENABLE ROW LEVEL SECURITY;
 ALTER TABLE seats ENABLE ROW LEVEL SECURITY;

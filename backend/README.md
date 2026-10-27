@@ -32,6 +32,7 @@ backend/
 │   ├── dependencies.py
 │   ├── main.py
 │   ├── models.py
+│   ├── tmdb_import.py
 │   ├── routers/
 │   │   ├── admin.py
 │   │   ├── auth.py
@@ -43,9 +44,12 @@ backend/
 │   ├── schemas.py
 │   └── security.py
 ├── db/
+│   ├── migrations/
+│   │   └── 001_tmdb_movie_cast.sql
 │   └── schema.sql
 ├── tests/
-│   └── test_api.py
+│   ├── test_api.py
+│   └── test_tmdb_import.py
 ├── .env.example
 ├── README.md
 ├── requirements.txt
@@ -59,7 +63,8 @@ The database contains the following key entities:
 
 - `users` — customer, staff, and admin accounts
 - `auth_sessions` — active JWT session records
-- `movies` — movie metadata and status
+- `movies` — movie metadata and status, with an optional TMDB ID
+- `casts` and `movie_cast` — normalized TMDB cast profiles and per-movie character credits
 - `cinemas` and `halls` — theater infrastructure
 - `seats` — per-seat pricing and availability metadata
 - `showtimes` — screening schedules
@@ -185,6 +190,30 @@ psql -d cinego -f db/schema.sql
 ```
 
 If you are using Supabase or a managed PostgreSQL instance, load the schema into that database instead.
+
+For an existing database, apply the additive TMDB schema migration:
+
+```bash
+psql -d cinego -f db/migrations/001_tmdb_movie_cast.sql
+```
+
+The original `movies.casts` text field is retained for existing API clients. The importer keeps it populated with the first ten cast names, while all available credited cast members and their character/order details are stored in `casts` and `movie_cast`.
+
+## Importing movies from TMDB
+
+Create a TMDB API Read Access Token and set it as `TMDB_API_READ_ACCESS_TOKEN` in `backend/.env`. The token is sent as a bearer token in the Authorization header and is never placed in the request URL.
+
+Run the importer from the `backend` directory:
+
+```bash
+python -m app.tmdb_import --pages 1 --language en-US --region US
+```
+
+Each discover page has up to 20 results. The importer fetches movie details (runtime, genre, certification, and trailer) and the dedicated movie credits endpoint (cast and director). It stores the first TMDB genre in the single-valued `movies.genre` column, uses the movie's original language code, and sets new records to `coming_soon`; re-imports update provider metadata without overwriting an admin-managed status. Results without a positive runtime are reported and skipped because `movies.duration_minutes` is required.
+
+`--pages` defaults to 1 and accepts values from 1 to 500. `--region` defaults to `US` and controls both TMDB's regional release filtering and certification lookup; pass `--region ""` to disable regional filtering. Imports are repeatable: movies and cast members are matched by their TMDB IDs.
+
+The importer retries temporary connection failures up to five times with exponential backoff. If all attempts fail with a connection reset during TLS setup, the connection is being closed before TMDB returns an HTTP response; check that the machine can reach `api.themoviedb.org` over HTTPS and that any firewall, proxy, VPN, or TLS-inspection software allows the connection. A persistent reset cannot be resolved by retrying alone.
 
 ## Installation
 

@@ -5,8 +5,10 @@ from decimal import Decimal
 from sqlalchemy import (
     CheckConstraint,
     DateTime,
+    Float,
     ForeignKey,
     Index,
+    BigInteger,
     Integer,
     Numeric,
     String,
@@ -62,6 +64,7 @@ class Movie(Base):
     __tablename__ = "movies"
     __table_args__ = (CheckConstraint("duration_minutes > 0"), CheckConstraint("status IN ('now_showing', 'coming_soon', 'inactive')"))
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    tmdb_id: Mapped[int | None] = mapped_column(BigInteger, unique=True)
     title: Mapped[str] = mapped_column(String(240), index=True)
     description: Mapped[str | None] = mapped_column(Text)
     director: Mapped[str | None] = mapped_column(String(160))
@@ -74,6 +77,34 @@ class Movie(Base):
     poster_url: Mapped[str | None] = mapped_column(String(2048))
     status: Mapped[str] = mapped_column(String(20), default="coming_soon", index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class CastMember(Base):
+    __tablename__ = "casts"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    tmdb_id: Mapped[int] = mapped_column(BigInteger, unique=True)
+    name: Mapped[str] = mapped_column(String(200))
+    original_name: Mapped[str | None] = mapped_column(String(200))
+    known_for_department: Mapped[str | None] = mapped_column(String(80))
+    gender: Mapped[int | None] = mapped_column(Integer)
+    profile_path: Mapped[str | None] = mapped_column(String(2048))
+    popularity: Mapped[float | None] = mapped_column(Float)
+
+
+class MovieCast(Base):
+    __tablename__ = "movie_cast"
+    __table_args__ = (Index("ix_movie_cast_cast_id", "cast_id"),)
+
+    movie_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("movies.id", ondelete="CASCADE"), primary_key=True
+    )
+    cast_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("casts.id", ondelete="CASCADE"), primary_key=True
+    )
+    character: Mapped[str | None] = mapped_column(Text)
+    cast_order: Mapped[int] = mapped_column(Integer, default=0)
+    credit_id: Mapped[str | None] = mapped_column(String(64))
 
 
 class Cinema(Base):

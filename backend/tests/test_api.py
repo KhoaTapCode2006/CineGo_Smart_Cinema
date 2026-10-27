@@ -13,6 +13,7 @@ os.environ["CORS_ORIGINS"] = "http://localhost:3000"
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import Settings
 from app.db import Base, engine
@@ -38,6 +39,29 @@ def test_liveness_and_readiness() -> None:
     with TestClient(app) as client:
         assert client.get("/health/live").json() == {"status": "alive"}
         assert client.get("/health/ready").json() == {"status": "ready"}
+
+
+def test_settings_env_file_is_resolved_from_backend_directory() -> None:
+    env_file = Path(Settings.model_config["env_file"])
+    assert env_file == Path(__file__).resolve().parents[1] / ".env"
+
+
+def test_readiness_returns_503_when_database_is_unavailable(monkeypatch: pytest.MonkeyPatch) -> None:
+    class FailingSession:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+        def execute(self, *_args, **_kwargs):
+            raise SQLAlchemyError("database unavailable")
+
+    monkeypatch.setattr("app.main.SessionLocal", lambda: FailingSession())
+    with TestClient(app) as client:
+        response = client.get("/health/ready")
+    assert response.status_code == 503
+    assert response.json()["status"] == "unavailable"
 
 
 def test_admin_endpoint_requires_authentication() -> None:

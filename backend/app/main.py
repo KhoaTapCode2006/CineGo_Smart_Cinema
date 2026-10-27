@@ -10,7 +10,7 @@ from sqlalchemy import select, text
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.requests import Request
-from starlette.responses import Response
+from starlette.responses import JSONResponse, Response
 
 from app.config import get_settings
 from app.db import SessionLocal
@@ -27,6 +27,7 @@ async def expire_seat_holds() -> None:
         sweep_time = datetime.now(timezone.utc)
         changed_by_showtime: dict[uuid.UUID, list[uuid.UUID]] = {}
         order_ids: set[uuid.UUID] = set()
+        retry_delay = 1.0
         try:
             with SessionLocal() as db:
                 expired = db.scalars(
@@ -44,6 +45,7 @@ async def expire_seat_holds() -> None:
             logger.exception("Seat-hold expiry sweep failed")
             changed_by_showtime.clear()
             order_ids.clear()
+            retry_delay = 10.0
         if order_ids:
             try:
                 with SessionLocal() as db:
@@ -66,7 +68,7 @@ async def expire_seat_holds() -> None:
         for showtime_id, seat_ids in changed_by_showtime.items():
             await seats.seat_socket_manager.publish(showtime_id, seat_ids)
         elapsed = asyncio.get_running_loop().time() - started_at
-        await asyncio.sleep(max(1.0 - elapsed, 0.1))
+        await asyncio.sleep(max(retry_delay - elapsed, 0.1))
 
 
 @asynccontextmanager
@@ -124,10 +126,14 @@ def live() -> dict[str, str]:
 
 
 @app.get("/health/ready", tags=["Health"])
-def ready() -> dict[str, str]:
-    with SessionLocal() as database:
-        database.execute(text("SELECT 1"))
-    return {"status": "ready"}
+def ready() -> Response:
+    try:
+        with SessionLocal() as database:
+            database.execute(text("SELECT 1"))
+    except SQLAlchemyError:
+        logger.exception("Database readiness check failed")
+        return JSONResponse(status_code=503, content={"status": "unavailable", "detail": "database unavailable"})
+    return JSONResponse(content={"status": "ready"})
 
 
 for route_module in (auth, catalog, seats, orders, tickets, admin):
