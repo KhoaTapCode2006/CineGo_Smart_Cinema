@@ -47,7 +47,9 @@ export interface Movie {
   trailerUrl: string | null;
   trailerEmbedUrl: string | null;
   posterUrl: string | null;
+  backdropUrl?: string | null;
   heroImageUrl: string | null;
+  durationMin?: number;
   status: MovieStatus;
 }
 
@@ -149,7 +151,9 @@ export function mapMovieOutToMovie(raw: MovieOut): Movie {
     trailerUrl: raw.trailer_url,
     trailerEmbedUrl,
     posterUrl: raw.poster_url,
+    backdropUrl: (raw as any).backdrop_url || (raw as any).backdropUrl || null,
     heroImageUrl,
+    durationMin: raw.duration_minutes || 0,
     status: raw.status,
   };
 }

@@ -2,18 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { getMovies, getMovieById, FetchMoviesParams, FetchMoviesResult } from '../api/catalog';
 import { Movie } from '../types/movie';
 
-const STANDARD_GENRES = [
-  'All',
-  'Action',
-  'Animation',
-  'Comedy',
-  'Drama',
-  'Horror',
-  'Mystery',
-  'Romance',
-  'Sci-Fi',
-  'Thriller',
-];
 
 /**
  * Hook to fetch paginated/filtered movies list with caching.
@@ -104,22 +92,38 @@ export function useFeaturedMovies() {
 }
 
 /**
- * Hook to extract available genres dynamically from loaded movies + standard list.
+ * Hook to extract available genres dynamically ONLY from distinct `genre` values in real data.
+ * One cached request (pageSize: 100 across statuses). No hard-coded fallbacks.
+ * Sorted alphabetically, deduplicated case-insensitively.
  */
 export function useGenres() {
-  const { data } = useMovies({ pageSize: 50 });
+  const { data: genres = [] } = useQuery<string[]>({
+    queryKey: ['distinct-catalog-genres'],
+    queryFn: async () => {
+      const res = await getMovies({ pageSize: 100 });
+      const genreMap = new Map<string, string>();
 
-  const dynamicGenres = new Set<string>(STANDARD_GENRES);
+      (res.items || []).forEach((m) => {
+        if (m.genre && typeof m.genre === 'string') {
+          const parts = m.genre.split(',').map((g) => g.trim()).filter(Boolean);
+          parts.forEach((g) => {
+            const key = g.toLowerCase();
+            if (!genreMap.has(key)) {
+              genreMap.set(key, g);
+            }
+          });
+        }
+      });
 
-  if (data?.items) {
-    data.items.forEach((m) => {
-      if (m.genre && m.genre.trim()) {
-        dynamicGenres.add(m.genre.trim());
-      }
-    });
-  }
+      return Array.from(genreMap.values()).sort((a, b) =>
+        a.localeCompare(b, undefined, { sensitivity: 'base' })
+      );
+    },
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
 
-  return Array.from(dynamicGenres);
+  return genres;
 }
 
 /**

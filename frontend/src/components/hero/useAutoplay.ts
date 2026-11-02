@@ -1,50 +1,52 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
-interface UseAutoplayOptions {
-  duration?: number; // default 4500ms
+export interface UseAutoplayOptions {
+  /** Duration in milliseconds for each slide (default: 6000ms) */
+  duration?: number;
+  /** Whether autoplay is currently paused */
   isPaused: boolean;
+  /** Callback fired to advance to the next slide */
   onNext: () => void;
-  resetTrigger?: number; // Whenever activeIndex or rotation changes
+  /** Value that changes whenever the active slide changes manually or automatically */
+  resetTrigger?: number | string;
 }
 
 export function useAutoplay({
-  duration = 4500,
+  duration = 6000,
   isPaused,
   onNext,
   resetTrigger,
 }: UseAutoplayOptions) {
-  const [progress, setProgress] = useState(0);
   const onNextRef = useRef(onNext);
   onNextRef.current = onNext;
 
-  // Reset progress bar whenever the card changes
+  // Unique cycle key that increments on new slide or after resuming from pause
+  const [cycleKey, setCycleKey] = useState(0);
+
+  // Whenever the active slide changes, reset the cycle
   useEffect(() => {
-    setProgress(0);
+    setCycleKey((k) => k + 1);
   }, [resetTrigger]);
 
+  // Handle timer
   useEffect(() => {
     if (isPaused) {
       return;
     }
 
-    const intervalMs = 50; // smooth 20fps tick for progress bar
-    const increment = (intervalMs / duration) * 100;
+    // When resuming from pause, restart the progress bar
+    setCycleKey((k) => k + 1);
 
-    const timer = setInterval(() => {
-      setProgress((prev) => {
-        const next = prev + increment;
-        if (next >= 100) {
-          onNextRef.current();
-          return 0;
-        }
-        return next;
-      });
-    }, intervalMs);
+    const timer = setTimeout(() => {
+      onNextRef.current();
+    }, duration);
 
-    return () => clearInterval(timer);
-  }, [isPaused, duration]);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [isPaused, duration, resetTrigger]);
 
-  return { progress };
+  return { cycleKey };
 }
 
 export default useAutoplay;

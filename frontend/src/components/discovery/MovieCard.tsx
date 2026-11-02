@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Film, Play, Ticket, Info } from 'lucide-react';
 import { Movie } from '../../types/movie';
 import AgeRatingBadge from '../ui/AgeRatingBadge';
+import SpotlightCard from '../effects/SpotlightCard';
 
 interface MovieCardProps {
   movie: Movie;
@@ -20,8 +21,15 @@ export const MovieCard: React.FC<MovieCardProps> = ({
   const posterSrc = !imageError && movie.posterUrl ? movie.posterUrl : null;
 
   return (
-    <div className="group relative flex flex-col rounded-card bg-cinema-card border border-cinema-border/80 hover:border-cinema-muted/40 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-black/60 focus-within:ring-2 focus-within:ring-brand">
-      {/* 2:3 Portrait Poster Container */}
+    <SpotlightCard
+      spotlightRadius={240}
+      spotlightColor="rgba(245, 179, 1, 0.14)"
+      borderGlowColor="rgba(245, 179, 1, 0.4)"
+      hoverScale={1.025}
+      className="h-full"
+    >
+      <div className="group relative flex flex-col h-full rounded-card bg-cinema-card border border-cinema-border/80 hover:border-cinema-muted/40 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-black/60 focus-within:ring-2 focus-within:ring-brand">
+        {/* 2:3 Portrait Poster Container */}
       <div className="relative w-full aspect-poster bg-cinema-surface overflow-hidden">
         {posterSrc ? (
           <img
@@ -128,6 +136,7 @@ export const MovieCard: React.FC<MovieCardProps> = ({
         </div>
       </div>
     </div>
+  </SpotlightCard>
   );
 };
 

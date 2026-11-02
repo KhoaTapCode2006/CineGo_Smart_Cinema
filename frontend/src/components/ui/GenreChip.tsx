@@ -22,8 +22,8 @@ export const GenreChip: React.FC<GenreChipProps> = ({
       className={cn(
         'inline-flex items-center justify-center px-4 py-2 min-h-[44px] rounded-full text-sm font-medium transition-all duration-200 cursor-pointer whitespace-nowrap focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-cinema-bg',
         isSelected
-          ? 'bg-brand text-white shadow-lg shadow-brand/25 font-semibold'
-          : 'bg-cinema-surface hover:bg-cinema-hover text-cinema-muted hover:text-cinema-text border border-cinema-border hover:border-cinema-muted/30',
+          ? 'bg-brand text-white border border-brand shadow-lg shadow-brand/30 font-semibold [text-shadow:_0_1px_2px_rgba(0,0,0,0.5)]'
+          : 'bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 text-slate-200 hover:text-white [text-shadow:_0_1px_2px_rgba(0,0,0,0.6)]',
         className
       )}
     >

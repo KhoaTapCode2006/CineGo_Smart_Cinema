@@ -34,7 +34,7 @@ export const Tabs: React.FC<TabsProps> = ({
     <div
       role="tablist"
       aria-label="Movie status tabs"
-      className={cn('flex items-center gap-6 border-b border-cinema-border', className)}
+      className={cn('flex items-center gap-6 border-b border-white/10', className)}
     >
       {tabs.map((tab, idx) => {
         const isActive = tab.id === activeTab;
@@ -51,8 +51,8 @@ export const Tabs: React.FC<TabsProps> = ({
             className={cn(
               'relative py-3.5 px-1 min-h-[44px] flex items-center gap-2 text-base font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:text-brand',
               isActive
-                ? 'text-white'
-                : 'text-cinema-muted hover:text-cinema-text'
+                ? 'text-white font-bold [text-shadow:_0_1px_3px_rgba(0,0,0,0.8)]'
+                : 'text-slate-300 hover:text-white [text-shadow:_0_1px_2px_rgba(0,0,0,0.7)]'
             )}
           >
             <span>{tab.label}</span>
@@ -61,8 +61,8 @@ export const Tabs: React.FC<TabsProps> = ({
                 className={cn(
                   'px-2 py-0.5 text-xs rounded-full font-medium transition-colors',
                   isActive
-                    ? 'bg-brand/20 text-brand-300'
-                    : 'bg-cinema-surface text-cinema-muted'
+                    ? 'bg-brand/20 text-brand-300 border border-brand/40'
+                    : 'bg-white/5 border border-white/10 text-slate-300'
                 )}
               >
                 {tab.count}
