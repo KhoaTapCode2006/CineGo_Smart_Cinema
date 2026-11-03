@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import HomePage from '../pages/HomePage';
 import MovieDetailPage from '../pages/MovieDetailPage';
+import ScrollToHash from './ScrollToHash';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -13,20 +14,6 @@ const queryClient = new QueryClient({
     },
   },
 });
-
-/**
- * Scroll to the element named in the URL's #hash once the page has rendered it. The browser's
- * own attempt runs before React renders, so links like "/#discover" would otherwise stay at the top.
- */
-const ScrollToHash: React.FC = () => {
-  const { pathname, hash } = useLocation();
-
-  useEffect(() => {
-    if (hash) document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView();
-  }, [pathname, hash]);
-
-  return null;
-};
 
 export const App: React.FC = () => {
   return (
