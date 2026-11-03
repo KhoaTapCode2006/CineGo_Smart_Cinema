@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Film, Play, Ticket, Info } from 'lucide-react';
 import { Movie } from '../../types/movie';
 import StatusBadge from '../ui/StatusBadge';
@@ -15,7 +16,6 @@ export interface HeroSlideProps {
   isFirstSlide: boolean;
   prefersReducedMotion: boolean;
   onWatchTrailer?: (movie: Movie, triggerEl: HTMLElement) => void;
-  onBookNow?: (movie: Movie) => void;
 }
 
 export const HeroSlide: React.FC<HeroSlideProps> = ({
@@ -29,7 +29,6 @@ export const HeroSlide: React.FC<HeroSlideProps> = ({
   isFirstSlide,
   prefersReducedMotion,
   onWatchTrailer,
-  onBookNow,
 }) => {
   const [backdropError, setBackdropError] = useState(false);
   const [posterError, setPosterError] = useState(false);
@@ -291,14 +290,8 @@ export const HeroSlide: React.FC<HeroSlideProps> = ({
           {/* Action Buttons */}
           <div className="flex items-center gap-3.5 w-full" style={getTextAnimation(420)}>
             {/* Primary Pill Button */}
-            <a
-              href={`/movies/${movie.id}`}
-              onClick={(e) => {
-                if (isNowShowing && onBookNow) {
-                  e.preventDefault();
-                  onBookNow(movie);
-                }
-              }}
+            <Link
+              to={`/movies/${movie.id}`}
               className="inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3 min-h-[44px] rounded-full bg-brand hover:bg-brand-600 text-white font-bold text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-brand/30 hover:shadow-brand/50 hover:scale-[1.02] active:scale-95 transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
             >
               {isNowShowing ? (
@@ -312,7 +305,7 @@ export const HeroSlide: React.FC<HeroSlideProps> = ({
                   <span>View Details</span>
                 </>
               )}
-            </a>
+            </Link>
 
             {/* Round Play Button for Trailer */}
             {movie.trailerUrl && (

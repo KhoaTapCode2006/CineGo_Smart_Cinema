@@ -44,7 +44,12 @@ export const MovieCard: React.FC<MovieCardProps> = ({
       >
       <div className="group relative flex flex-col h-full rounded-card bg-cinema-card border border-cinema-border/80 hover:border-cinema-muted/40 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-black/60 focus-within:ring-2 focus-within:ring-brand">
         {/* 2:3 Portrait Poster Container */}
-      <div className="relative w-full aspect-poster bg-cinema-surface overflow-hidden">
+      <Link
+        to={`/movies/${movie.id}`}
+        tabIndex={-1}
+        aria-hidden="true"
+        className="relative block w-full aspect-poster bg-cinema-surface overflow-hidden"
+      >
         {posterSrc ? (
           <img
             src={posterSrc}
@@ -80,7 +85,7 @@ export const MovieCard: React.FC<MovieCardProps> = ({
             </span>
           </div>
         )}
-      </div>
+      </Link>
 
       {/* Card Info Content */}
       <div className="p-3 sm:p-3.5 flex flex-col flex-1 justify-between gap-1.5">

@@ -11,7 +11,6 @@ export interface HeroCarouselProps {
   isLoading?: boolean;
   isError?: boolean;
   onRetry?: () => void;
-  onBookNow?: (movie: Movie) => void;
 }
 
 export const HeroCarousel: React.FC<HeroCarouselProps> = ({
@@ -19,7 +18,6 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({
   isLoading = false,
   isError = false,
   onRetry,
-  onBookNow,
 }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [prevIndex, setPrevIndex] = useState<number | null>(null);
@@ -330,7 +328,6 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({
             isFirstSlide={idx === 0}
             prefersReducedMotion={prefersReducedMotion}
             onWatchTrailer={handleOpenTrailer}
-            onBookNow={onBookNow}
           />
         ))}
       </div>
