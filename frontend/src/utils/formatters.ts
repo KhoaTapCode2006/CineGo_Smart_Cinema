@@ -12,6 +12,13 @@ export function formatCurrencyVND(amount: number | string | null | undefined): s
 }
 
 /**
+ * Format a price in the compact style of the booking screens, e.g. "90.000đ".
+ */
+export function formatPriceVND(amount: number): string {
+  return `${new Intl.NumberFormat('vi-VN').format(amount)}đ`;
+}
+
+/**
  * Format an ISO date string to readable localized date.
  */
 export function formatDate(isoString: string): string {

@@ -50,3 +50,22 @@ export const HeroSliderSkeleton: React.FC = () => {
     </div>
   );
 };
+
+export const MovieDetailSkeleton: React.FC = () => {
+  return (
+    <div aria-label="Đang tải phim" className="flex flex-col gap-6 w-full animate-pulse">
+      <div className="flex items-start gap-8 w-full">
+        <div className="flex-1 md:flex-none md:w-[280px] h-[280px] md:h-[340px] rounded-xl bg-cinema-raised" />
+        <div className="flex-1 min-w-0 flex flex-col gap-5">
+          <div className="h-4 w-40 max-w-full rounded bg-cinema-raised" />
+          <div className="h-10 w-3/5 rounded bg-cinema-raised" />
+          <div className="h-5 w-2/5 rounded bg-cinema-raised" />
+          <div className="h-16 w-full rounded bg-cinema-raised" />
+          <div className="h-24 w-full rounded-card bg-cinema-raised" />
+        </div>
+      </div>
+      <div className="h-8 w-52 max-w-full rounded bg-cinema-raised" />
+      <div className="h-44 w-full rounded-card bg-cinema-raised" />
+    </div>
+  );
+};

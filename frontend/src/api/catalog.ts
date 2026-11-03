@@ -1,5 +1,6 @@
 import apiClient from './client';
 import {
+  CinemaOut,
   Movie,
   MovieOut,
   MoviePageResponse,
@@ -110,11 +111,15 @@ export async function getMovies(params: FetchMoviesParams = {}): Promise<FetchMo
   }
 }
 
+/** Error message of a missing movie, matching the API's 404 detail. */
+export const MOVIE_NOT_FOUND = 'Movie not found';
+
 /**
  * Fetch a single movie by ID.
  */
 export async function getMovieById(id: string): Promise<Movie> {
   const isMock = import.meta.env.VITE_USE_MOCK === 'true';
+  let apiError: unknown;
 
   if (!isMock) {
     try {
@@ -122,6 +127,7 @@ export async function getMovieById(id: string): Promise<Movie> {
       return mapMovieOutToMovie(data);
     } catch (error) {
       console.warn(`Failed to fetch movie ${id} from API, checking mock data...`);
+      apiError = error;
     }
   }
 
@@ -129,29 +135,37 @@ export async function getMovieById(id: string): Promise<Movie> {
   if (mock) {
     return mapMovieOutToMovie(mock);
   }
-  throw new Error('Movie not found');
+  throw apiError ?? new Error(MOVIE_NOT_FOUND);
 }
 
 /**
  * Fetch showtimes for a movie / cinema / date.
+ * Failures propagate: an empty list means the movie really has no showtimes.
  */
 export async function getShowtimes(params: {
   movieId?: string;
   cinemaId?: string;
   date?: string;
 }): Promise<ShowtimeOut[]> {
-  try {
-    const queryParams: Record<string, string> = {};
-    if (params.movieId) queryParams.movie_id = params.movieId;
-    if (params.cinemaId) queryParams.cinema_id = params.cinemaId;
-    if (params.date) queryParams.date = params.date;
+  if (import.meta.env.VITE_USE_MOCK === 'true') return [];
 
-    const { data } = await apiClient.get<ShowtimeOut[]>('/showtimes', {
-      params: queryParams,
-    });
-    return data || [];
-  } catch (error) {
-    console.warn('Failed to fetch showtimes:', error);
-    return [];
-  }
+  const queryParams: Record<string, string> = {};
+  if (params.movieId) queryParams.movie_id = params.movieId;
+  if (params.cinemaId) queryParams.cinema_id = params.cinemaId;
+  if (params.date) queryParams.date = params.date;
+
+  const { data } = await apiClient.get<ShowtimeOut[]>('/showtimes', {
+    params: queryParams,
+  });
+  return data || [];
+}
+
+/**
+ * Fetch active cinemas.
+ */
+export async function getCinemas(): Promise<CinemaOut[]> {
+  if (import.meta.env.VITE_USE_MOCK === 'true') return [];
+
+  const { data } = await apiClient.get<CinemaOut[]>('/cinemas');
+  return data || [];
 }

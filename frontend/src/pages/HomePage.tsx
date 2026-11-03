@@ -42,7 +42,7 @@ export const HomePage: React.FC = () => {
         />
 
         {/* Section B: Movie Discovery (Browse, Search, Filter, Pagination) */}
-        <MovieDiscovery onBookNow={handleBookNow} />
+        <MovieDiscovery />
       </main>
 
       {/* Footer */}

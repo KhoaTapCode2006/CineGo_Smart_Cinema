@@ -29,6 +29,11 @@ export default {
           text: '#F4F5F7',
           muted: '#9BA3B8',
           subtle: '#64748B',
+          // Booking screens (Figma "SE_FRI" color variables)
+          raised: '#232940',
+          outline: '#3B435D',
+          soft: '#ADB5CE',
+          coral: '#FF858B',
         },
         accent: {
           gold: '#F5B301',
