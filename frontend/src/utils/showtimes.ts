@@ -39,7 +39,15 @@ const timeFormatter = new Intl.DateTimeFormat('en-GB', {
   hour12: false,
 });
 
-const weekdayFormatter = new Intl.DateTimeFormat('vi-VN', { timeZone: 'UTC', weekday: 'long' });
+// Calendar days are plain YYYY-MM-DD strings, formatted at noon UTC so no time zone can shift them.
+const weekdayFormatter = new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', weekday: 'short' });
+const dayFormatter = new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' });
+const headingFormatter = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'UTC',
+  weekday: 'long',
+  month: 'long',
+  day: 'numeric',
+});
 
 /**
  * Get the cinema-local calendar day (YYYY-MM-DD) of an instant.
@@ -104,29 +112,24 @@ export function groupShowtimesByDay(showtimes: ShowtimeOut[], now: Date = new Da
     }));
 }
 
-function getWeekday(date: string): string {
-  return weekdayFormatter.format(new Date(`${date}T12:00:00Z`));
+function toNoonUtc(date: string): Date {
+  return new Date(`${date}T12:00:00Z`);
 }
 
 /**
- * Date selector label, e.g. "26/10 · Hôm nay" or "27/10 · Thứ Ba".
+ * Date selector label, e.g. { weekday: "Today", day: "Oct 26" } or { weekday: "Tue", day: "Oct 27" }.
  */
-export function formatDayChip(date: string, today: string): string {
-  const [, month, day] = date.split('-');
-  return `${day}/${month} · ${date === today ? 'Hôm nay' : getWeekday(date)}`;
+export function formatDayChip(date: string, today: string): { weekday: string; day: string } {
+  const noon = toNoonUtc(date);
+  return {
+    weekday: date === today ? 'Today' : weekdayFormatter.format(noon),
+    day: dayFormatter.format(noon),
+  };
 }
 
 /**
- * Section heading date, e.g. "Thứ Hai, 26/10/2026".
+ * Section heading date, e.g. "Monday, October 26".
  */
 export function formatDayHeading(date: string): string {
-  const [year, month, day] = date.split('-');
-  return `${getWeekday(date)}, ${day}/${month}/${year}`;
-}
-
-/**
- * Cinema name for the booking button, e.g. "CineGo Central" becomes "Central".
- */
-export function shortCinemaName(name: string): string {
-  return name.replace(/^CineGo\s+/i, '');
+  return headingFormatter.format(toNoonUtc(date));
 }

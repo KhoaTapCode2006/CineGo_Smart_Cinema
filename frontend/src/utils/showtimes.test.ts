@@ -5,7 +5,6 @@ import {
   formatDayHeading,
   getCinemaDate,
   groupShowtimesByDay,
-  shortCinemaName,
 } from './showtimes';
 
 function showtime(overrides: Partial<ShowtimeOut>): ShowtimeOut {
@@ -102,19 +101,12 @@ describe('groupShowtimesByDay', () => {
 });
 
 describe('day labels', () => {
-  it('labels today and weekdays like the design', () => {
-    expect(formatDayChip('2026-10-26', '2026-10-26')).toBe('26/10 · Hôm nay');
-    expect(formatDayChip('2026-10-27', '2026-10-26')).toBe('27/10 · Thứ Ba');
+  it('labels today and other days by weekday', () => {
+    expect(formatDayChip('2026-10-26', '2026-10-26')).toEqual({ weekday: 'Today', day: 'Oct 26' });
+    expect(formatDayChip('2026-10-27', '2026-10-26')).toEqual({ weekday: 'Tue', day: 'Oct 27' });
   });
 
   it('formats the section heading date', () => {
-    expect(formatDayHeading('2026-10-26')).toBe('Thứ Hai, 26/10/2026');
-  });
-});
-
-describe('shortCinemaName', () => {
-  it('drops the brand prefix for the booking button', () => {
-    expect(shortCinemaName('CineGo Central')).toBe('Central');
-    expect(shortCinemaName('Galaxy Nguyễn Du')).toBe('Galaxy Nguyễn Du');
+    expect(formatDayHeading('2026-10-26')).toBe('Monday, October 26');
   });
 });

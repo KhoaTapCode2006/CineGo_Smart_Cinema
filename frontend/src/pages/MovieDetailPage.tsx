@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { MOVIE_NOT_FOUND } from '../api/catalog';
-import DetailFooter from '../components/detail/DetailFooter';
-import DetailHeader from '../components/detail/DetailHeader';
-import MovieIntro from '../components/detail/MovieIntro';
+import Navbar from '../components/layout/Navbar';
+import Footer from '../components/layout/Footer';
+import AmbientEffects from '../components/effects/AmbientEffects';
+import MovieHero from '../components/detail/MovieHero';
 import ShowtimePicker from '../components/detail/ShowtimePicker';
 import EmptyState from '../components/ui/EmptyState';
 import ErrorState from '../components/ui/ErrorState';
@@ -20,37 +21,49 @@ export const MovieDetailPage: React.FC = () => {
   }, [id]);
 
   return (
-    <div className="min-h-screen flex flex-col pb-16 md:pb-0 bg-cinema-bg text-cinema-text">
-      <DetailHeader />
+    <div className="relative min-h-screen bg-transparent text-cinema-text flex flex-col overflow-x-clip">
+      {/* Same ambient background as the Home page */}
+      <AmbientEffects
+        galaxy={{ nebulaOpacity: 1, starOpacity: 1 }}
+        shootingStars={{ count: 6, angle: 32 }}
+        cursorGlow={{ redOpacity: 0.08, indigoOpacity: 0.07, size: 520, easing: 0.08 }}
+      />
 
-      <main className="flex-1 flex flex-col items-start gap-6 w-full max-w-[1440px] mx-auto px-4 pt-6 pb-8 md:px-16 md:py-8">
+      <Navbar />
+
+      <main className="relative z-10 flex-1">
         {isLoading ? (
           <MovieDetailSkeleton />
         ) : movie ? (
           <>
-            <MovieIntro movie={movie} />
+            <MovieHero movie={movie} />
             <ShowtimePicker movie={movie} />
           </>
-        ) : error?.message === MOVIE_NOT_FOUND ? (
-          <EmptyState
-            title="Không tìm thấy phim"
-            description="Phim này không tồn tại hoặc đã ngừng chiếu."
-            actionText="Về trang chủ"
-            onAction={() => navigate('/')}
-            className="w-full my-0"
-          />
         ) : (
-          <ErrorState
-            title="Không tải được phim"
-            message="Đã có lỗi khi kết nối tới máy chủ. Vui lòng thử lại."
-            retryText="Thử lại"
-            onRetry={() => refetch()}
-            className="w-full my-0"
-          />
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-10">
+            {error?.message === MOVIE_NOT_FOUND ? (
+              <EmptyState
+                type="search"
+                title="Movie not found"
+                description="This movie doesn't exist or is no longer showing."
+                actionText="Back to Home"
+                onAction={() => navigate('/')}
+              />
+            ) : (
+              <ErrorState
+                title="Couldn't load this movie"
+                message="Something went wrong while contacting the server. Please try again."
+                retryText="Retry"
+                onRetry={() => refetch()}
+              />
+            )}
+          </div>
         )}
       </main>
 
-      <DetailFooter />
+      <div className="relative z-10">
+        <Footer />
+      </div>
     </div>
   );
 };

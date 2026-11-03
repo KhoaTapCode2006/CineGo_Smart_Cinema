@@ -96,10 +96,10 @@ export function formatDuration(minutes: number): string {
 /**
  * Convert ISO language code to human-readable label via Intl.DisplayNames.
  */
-export function formatLanguage(code: string | null, locale: string = 'en'): string {
+export function formatLanguage(code: string | null): string {
   if (!code) return 'Standard';
   try {
-    const displayNames = new Intl.DisplayNames([locale], { type: 'language' });
+    const displayNames = new Intl.DisplayNames(['en'], { type: 'language' });
     const name = displayNames.of(code);
     return name ? name.charAt(0).toUpperCase() + name.slice(1) : code.toUpperCase();
   } catch {
