@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Film, User, Menu, X, Sparkles, Search } from 'lucide-react';
 import NavbarSearch from './NavbarSearch';
 import NavbarGenreDropdown from './NavbarGenreDropdown';
@@ -10,6 +11,8 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // On other pages the Discover section lives on Home.
+  const discoverHref = useLocation().pathname === '/' ? '#discover' : '/#discover';
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -60,7 +63,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
           {/* 2. Desktop Navigation Links */}
           <nav className="hidden lg:flex items-center gap-6 flex-shrink-0">
             <a
-              href="#discover"
+              href={discoverHref}
               className="text-sm font-semibold text-cinema-text hover:text-brand transition-colors"
             >
               Movies
@@ -96,7 +99,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
               <span>Sign In</span>
             </a>
             <a
-              href="#discover"
+              href={discoverHref}
               className="inline-flex items-center gap-1.5 px-4 py-1.5 min-h-[38px] text-xs font-bold uppercase tracking-wider rounded-btn bg-brand hover:bg-brand-600 text-white shadow-md shadow-brand/20 transition-all hover:shadow-brand/40"
             >
               <span>Book Tickets</span>
@@ -156,7 +159,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
       {mobileMenuOpen && (
         <div className="md:hidden border-b border-white/10 bg-[#070a1f]/95 backdrop-blur-2xl px-4 pt-3 pb-6 space-y-3 z-60 animate-fade-in">
           <a
-            href="#discover"
+            href={discoverHref}
             onClick={() => setMobileMenuOpen(false)}
             className="block px-3 py-2.5 rounded-btn text-base font-semibold text-white hover:bg-cinema-surface"
           >
@@ -184,7 +187,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
               Sign In
             </a>
             <a
-              href="#discover"
+              href={discoverHref}
               onClick={() => setMobileMenuOpen(false)}
               className="w-full py-2.5 text-center text-sm font-bold uppercase tracking-wider rounded-btn bg-brand text-white shadow-md shadow-brand/30"
             >

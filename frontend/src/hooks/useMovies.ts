@@ -1,6 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
-import { getMovies, getMovieById, FetchMoviesParams, FetchMoviesResult } from '../api/catalog';
-import { Movie } from '../types/movie';
+import {
+  getCinemas,
+  getMovies,
+  getMovieById,
+  getShowtimes,
+  FetchMoviesParams,
+  FetchMoviesResult,
+} from '../api/catalog';
+import { CinemaOut, Movie, ShowtimeOut } from '../types/movie';
 
 
 /**
@@ -138,5 +145,28 @@ export function useMovieDetail(id: string | undefined) {
     },
     enabled: Boolean(id),
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+/**
+ * Hook to fetch a movie's upcoming showtimes. Kept short-lived because seat counts change.
+ */
+export function useShowtimes(movieId: string | undefined) {
+  return useQuery<ShowtimeOut[]>({
+    queryKey: ['movie-showtimes', movieId],
+    queryFn: () => getShowtimes({ movieId }),
+    enabled: Boolean(movieId),
+    staleTime: 60 * 1000,
+  });
+}
+
+/**
+ * Hook to fetch active cinemas.
+ */
+export function useCinemas() {
+  return useQuery<CinemaOut[]>({
+    queryKey: ['cinemas'],
+    queryFn: getCinemas,
+    staleTime: 10 * 60 * 1000,
   });
 }

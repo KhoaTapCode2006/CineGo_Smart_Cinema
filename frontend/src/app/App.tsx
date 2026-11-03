@@ -1,6 +1,9 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import HomePage from '../pages/HomePage';
+import MovieDetailPage from '../pages/MovieDetailPage';
+import ScrollToHash from './ScrollToHash';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -15,7 +18,13 @@ const queryClient = new QueryClient({
 export const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <HomePage />
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <ScrollToHash />
+        <Routes>
+          <Route path="/movies/:id" element={<MovieDetailPage />} />
+          <Route path="*" element={<HomePage />} />
+        </Routes>
+      </BrowserRouter>
     </QueryClientProvider>
   );
 };
