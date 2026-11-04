@@ -1,3 +1,279 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --nav-h: 4rem;
+}
+
+@layer base {
+  html,
+  body {
+    overflow-x: clip;
+  }
+
+  body {
+    @apply text-cinema-text font-sans antialiased min-h-screen selection:bg-brand selection:text-white;
+    background-color: #070913;
+    color: #F4F5F7;
+  }
+
+  /* Custom subtle scrollbars for horizontal filter chips */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Ensure focus-visible rings are prominent for accessibility */
+*:focus-visible {
+  @apply outline-none ring-2 ring-brand ring-offset-2 ring-offset-[#070913];
+}
+
+/* -------------------------------------------------------------------------- */
+/* Shooting Star Classes & Keyframes (Translates along +X with leading head)  */
+/* -------------------------------------------------------------------------- */
+.meteor {
+  position: absolute;
+  transform: rotate(var(--angle, 32deg));
+  transform-origin: left center;
+  pointer-events: none;
+}
+
+.meteor__body {
+  position: relative;
+  height: 1.5px;
+  background: linear-gradient(to right, transparent 0%, rgba(245, 179, 1, 0.25) 50%, rgba(255, 255, 255, 0.85) 85%, #ffffff 100%);
+  border-radius: 9999px;
+  will-change: transform, opacity;
+}
+
+.meteor__body::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  box-shadow: 0 0 6px 1.5px #ffffff, 0 0 14px 3px rgba(245, 179, 1, 0.9), 0 0 24px 5px rgba(229, 9, 20, 0.4);
+}
+
+@keyframes meteorFly {
+  0% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  2.5% {
+    opacity: 1;
+  }
+  13% {
+    opacity: 1;
+  }
+  16% {
+    transform: translateX(var(--meteor-distance, 550px));
+    opacity: 0;
+  }
+  16.01%, 100% {
+    transform: translateX(var(--meteor-distance, 550px));
+    opacity: 0;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Galaxy Nebula Drift Keyframes (Transform only)                             */
+/* -------------------------------------------------------------------------- */
+@keyframes nebulaDrift1 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-35px, 25px) scale(1.08);
+  }
+}
+
+@keyframes nebulaDrift2 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(30px, -28px) scale(1.06);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Star Twinkle Keyframes (Opacity only)                                      */
+/* -------------------------------------------------------------------------- */
+@keyframes starTwinkleSlow {
+  0%, 100% {
+    opacity: 0.75;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+@keyframes starTwinkleMedium {
+  0%, 100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes starTwinkleFast {
+  0%, 100% {
+    opacity: 0.95;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Cinematic Hero Banner Carousel Keyframes                                   */
+/* -------------------------------------------------------------------------- */
+@keyframes kenBurns {
+  0% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes progressBarFill {
+  0% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes heroContentSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes heroTextFadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Slide Drift Transitions (1000–1200ms cubic-bezier(.22,.8,.24,1)) */
+@keyframes slideInNextBg {
+  0% {
+    transform: translateX(4%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInNextPoster {
+  0% {
+    transform: translateX(10%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInPrevBg {
+  0% {
+    transform: translateX(-4%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInPrevPoster {
+  0% {
+    transform: translateX(-10%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutNextBg {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-4%);
+    opacity: 0;
+  }
+}
+
+@keyframes slideOutNextPoster {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-10%);
+    opacity: 0;
+  }
+}
+
+@keyframes slideOutPrevBg {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(4%);
+    opacity: 0;
+  }
+}
+
+@keyframes slideOutPrevPoster {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(10%);
+    opacity: 0;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Accessibility: Turn off animations for prefers-reduced-motion              */
+/* -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

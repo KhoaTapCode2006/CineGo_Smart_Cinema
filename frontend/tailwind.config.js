@@ -16,14 +16,23 @@ export default {
           700: '#be123c',
           800: '#9f1239',
           900: '#881337',
-          DEFAULT: '#e50914',
+          DEFAULT: '#E50914',
         },
         cinema: {
-          dark: '#0B0F19',
-          darker: '#06090F',
-          card: '#131B2E',
-          border: '#1F293D',
-          hover: '#1B253D',
+          bg: '#0F1220',
+          dark: '#0B0E1A',
+          surface: '#181C2E',
+          card: '#181C2E',
+          cardElevated: '#20253D',
+          border: '#262D4A',
+          hover: '#222942',
+          text: '#F4F5F7',
+          muted: '#9BA3B8',
+          subtle: '#64748B',
+        },
+        accent: {
+          gold: '#F5B301',
+          goldHover: '#E0A300',
         },
         seat: {
           standard: '#38BDF8',
@@ -34,12 +43,26 @@ export default {
           sold: '#334155',
         }
       },
+      borderRadius: {
+        card: '12px',
+        btn: '8px',
+      },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
+      aspectRatio: {
+        poster: '2 / 3',
+      },
       animation: {
         'pulse-subtle': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-      }
+        'fade-in': 'fadeIn 300ms ease-in-out',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0', transform: 'translateY(6px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
     },
   },
   plugins: [],
