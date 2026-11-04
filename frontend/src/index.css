@@ -267,6 +267,80 @@
 }
 
 /* -------------------------------------------------------------------------- */
+/* Cinematic Hero Film-Strip Atmospheric Decoration Keyframes                */
+/* -------------------------------------------------------------------------- */
+@keyframes filmStripDrift {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(6px, -7px, 0) rotate(0.5deg);
+  }
+  100% {
+    transform: translate3d(-6px, 5px, 0) rotate(-0.5deg);
+  }
+}
+
+@keyframes filmStripBackDrift {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(-7px, 6px, 0) rotate(-0.4deg);
+  }
+  100% {
+    transform: translate3d(5px, -5px, 0) rotate(0.4deg);
+  }
+}
+
+@keyframes filmStripSweep {
+  0% {
+    transform: translateX(-120%) rotate(20deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.11;
+  }
+  45% {
+    opacity: 0.11;
+  }
+  65%, 100% {
+    transform: translateX(180%) rotate(20deg);
+    opacity: 0;
+  }
+}
+
+.film-strip-main-drift {
+  animation: filmStripDrift 14s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.film-strip-back-drift {
+  animation: filmStripBackDrift 18s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.film-strip-sweep-beam {
+  animation: filmStripSweep 9s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+/* Responsive tuning for the film-strip variables */
+@media (max-width: 1023px) {
+  :root {
+    --strip-scale: 0.82;
+    --strip-opacity: 0.45;
+  }
+}
+
+@media (max-width: 639px) {
+  :root {
+    --strip-scale: 0.65;
+    --strip-opacity: 0.25;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
 /* Accessibility: Turn off animations for prefers-reduced-motion              */
 /* -------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {

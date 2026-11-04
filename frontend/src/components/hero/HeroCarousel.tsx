@@ -3,6 +3,7 @@ import { Film, AlertCircle, RefreshCw } from 'lucide-react';
 import { Movie } from '../../types/movie';
 import HeroSlide from './HeroSlide';
 import HeroControls from './HeroControls';
+import HeroFilmStrip from './HeroFilmStrip';
 import TrailerModal from '../ui/TrailerModal';
 import useAutoplay from './useAutoplay';
 
@@ -331,6 +332,9 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({
           />
         ))}
       </div>
+
+      {/* Atmospheric Film-Strip Decoration Layer (Global to hero, sits between backdrop & content) */}
+      <HeroFilmStrip />
 
       {/* Hero Controls: Prev/Next Circular Arrow Buttons + Progress Dots */}
       <HeroControls

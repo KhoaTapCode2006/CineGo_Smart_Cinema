@@ -136,11 +136,9 @@ export const HeroSlide: React.FC<HeroSlideProps> = ({
       aria-roledescription="slide"
       aria-label={`${index + 1} of ${total}`}
       aria-hidden={!isActive}
-      className="absolute inset-0 w-full h-full select-none"
+      className="absolute inset-0 w-full h-full select-none pointer-events-none"
       style={{
         visibility: isVisible ? 'visible' : 'hidden',
-        pointerEvents: isActive ? 'auto' : 'none',
-        zIndex: isActive ? 10 : isOutgoing ? 5 : 0,
       }}
     >
       {/* ---------------------------------------------------------------------- */}
@@ -152,6 +150,7 @@ export const HeroSlide: React.FC<HeroSlideProps> = ({
         style={{
           maskImage: 'linear-gradient(to bottom, #000 0%, #000 65%, transparent 100%)',
           WebkitMaskImage: 'linear-gradient(to bottom, #000 0%, #000 65%, transparent 100%)',
+          zIndex: isActive ? 2 : isOutgoing ? 1 : 0,
         }}
       >
         {/* Animated Background Container (Drifts ~4% horizontally via translateX) */}
@@ -221,10 +220,12 @@ export const HeroSlide: React.FC<HeroSlideProps> = ({
       {/* pt = navbar height (--nav-h), pb = 120px so text & poster share center  */}
       {/* ---------------------------------------------------------------------- */}
       <div
-        className="relative z-10 max-w-[1280px] mx-auto w-full h-full px-6 flex flex-row items-center justify-between pointer-events-none"
+        className="relative max-w-[1280px] mx-auto w-full h-full px-6 flex flex-row items-center justify-between pointer-events-none"
         style={{
           paddingTop: 'var(--nav-h, 4rem)',
           paddingBottom: '120px',
+          zIndex: isActive ? 20 : isOutgoing ? 10 : 0,
+          pointerEvents: isActive ? 'auto' : 'none',
         }}
       >
         {/* Left: Text Block */}
@@ -326,7 +327,7 @@ export const HeroSlide: React.FC<HeroSlideProps> = ({
         </div>
 
         {/* Right: Sharp Poster Container (100% of content box, max-h-[560px], aspect-2/3, shrink-0, NOT masked) */}
-        {!hasBackdrop && hasPoster && (
+        {hasPoster && (
           <div
             className="hidden lg:flex h-full max-h-[560px] aspect-[2/3] shrink-0 items-center justify-center pointer-events-none"
             style={getPosterAnimationStyle()}
