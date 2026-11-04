@@ -51,12 +51,12 @@ export const HeroControls: React.FC<HeroControlsProps> = ({
         <ChevronRight className="w-5 h-5 lg:w-6 lg:h-6 translate-x-0.5" />
       </button>
 
-      {/* 2. Progress Dots: Bottom-right of content area BELOW the poster (never over it), centered on mobile */}
-      <div className="absolute inset-x-0 bottom-7 pointer-events-none z-30">
-        <div className="max-w-[1280px] mx-auto px-6 flex justify-center sm:justify-end">
+      {/* 2. Progress Dots: Bottom-center of hero banner */}
+      <div className="absolute inset-x-0 bottom-5 sm:bottom-6 pointer-events-none z-30">
+        <div className="max-w-[1280px] mx-auto px-6 flex justify-center">
           <nav
             aria-label="Carousel pagination"
-            className="pointer-events-auto flex items-center gap-2 p-1.5 rounded-full bg-black/30 backdrop-blur-md border border-white/10 shadow-lg"
+            className="pointer-events-auto flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10 shadow-md"
           >
             {Array.from({ length: total }).map((_, idx) => {
               const isActive = idx === activeIndex;
@@ -68,26 +68,30 @@ export const HeroControls: React.FC<HeroControlsProps> = ({
                   onClick={() => onSelect(idx)}
                   aria-label={`Go to slide ${idx + 1}`}
                   aria-current={isActive ? 'true' : undefined}
-                  className={`relative h-2 rounded-full overflow-hidden transition-all duration-300 min-h-[16px] cursor-pointer flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand ${
-                    isActive
-                      ? 'w-10 sm:w-12 bg-white/20'
-                      : 'w-2.5 sm:w-3.5 bg-white/30 hover:bg-white/60'
-                  }`}
+                  className="group relative py-1 px-0.5 cursor-pointer flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-full"
                 >
-                  {isActive && (
-                    <span
-                      key={`progress-fill-${cycleKey}`}
-                      className="absolute inset-0 bg-brand rounded-full origin-left"
-                      style={{
-                        animation: prefersReducedMotion
-                          ? 'none'
-                          : 'progressBarFill 6s linear forwards',
-                        animationPlayState: isPaused ? 'paused' : 'running',
-                        transform: prefersReducedMotion ? 'scaleX(1)' : undefined,
-                      }}
-                      aria-hidden="true"
-                    />
-                  )}
+                  <span
+                    className={`relative h-1.5 sm:h-2 rounded-full overflow-hidden transition-all duration-300 block ${
+                      isActive
+                        ? 'w-6 sm:w-8 bg-white/20'
+                        : 'w-1.5 sm:w-2 bg-white/35 group-hover:bg-white/70'
+                    }`}
+                  >
+                    {isActive && (
+                      <span
+                        key={`progress-fill-${cycleKey}`}
+                        className="absolute inset-0 bg-brand rounded-full origin-left"
+                        style={{
+                          animation: prefersReducedMotion
+                            ? 'none'
+                            : 'progressBarFill 6s linear forwards',
+                          animationPlayState: isPaused ? 'paused' : 'running',
+                          transform: prefersReducedMotion ? 'scaleX(1)' : undefined,
+                        }}
+                        aria-hidden="true"
+                      />
+                    )}
+                  </span>
                 </button>
               );
             })}
