@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
-import { Film, Play, Ticket, Info } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Film } from 'lucide-react';
 import { Movie } from '../../types/movie';
 import AgeRatingBadge from '../ui/AgeRatingBadge';
 import SpotlightCard from '../effects/SpotlightCard';
 
 interface MovieCardProps {
   movie: Movie;
-  onWatchTrailer?: (movie: Movie) => void;
-  onBookNow?: (movie: Movie) => void;
+  onPreviewOpen?: (movie: Movie, anchor: HTMLElement) => void;
+  onPreviewClose?: () => void;
 }
 
 export const MovieCard: React.FC<MovieCardProps> = ({
   movie,
-  onWatchTrailer,
-  onBookNow,
+  onPreviewOpen,
+  onPreviewClose,
 }) => {
   const [imageError, setImageError] = useState(false);
   const isComingSoon = movie.status === 'coming_soon';
@@ -21,16 +22,34 @@ export const MovieCard: React.FC<MovieCardProps> = ({
   const posterSrc = !imageError && movie.posterUrl ? movie.posterUrl : null;
 
   return (
-    <SpotlightCard
-      spotlightRadius={240}
-      spotlightColor="rgba(245, 179, 1, 0.14)"
-      borderGlowColor="rgba(245, 179, 1, 0.4)"
-      hoverScale={1.025}
+    <div
       className="h-full"
+      onPointerEnter={(e) => {
+        // A tap should just follow the card's link. Checking the pointer in use, rather than
+        // a hover media query, keeps the popup working for a mouse on touchscreen laptops.
+        if (e.pointerType === 'mouse') onPreviewOpen?.(movie, e.currentTarget);
+      }}
+      onPointerLeave={onPreviewClose}
+      onFocus={(e) => {
+        if (e.target.matches(':focus-visible')) onPreviewOpen?.(movie, e.currentTarget);
+      }}
+      onBlur={onPreviewClose}
     >
+      <SpotlightCard
+        spotlightRadius={240}
+        spotlightColor="rgba(245, 179, 1, 0.14)"
+        borderGlowColor="rgba(245, 179, 1, 0.4)"
+        hoverScale={1.025}
+        className="h-full"
+      >
       <div className="group relative flex flex-col h-full rounded-card bg-cinema-card border border-cinema-border/80 hover:border-cinema-muted/40 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-black/60 focus-within:ring-2 focus-within:ring-brand">
         {/* 2:3 Portrait Poster Container */}
-      <div className="relative w-full aspect-poster bg-cinema-surface overflow-hidden">
+      <Link
+        to={`/movies/${movie.id}`}
+        tabIndex={-1}
+        aria-hidden="true"
+        className="relative block w-full aspect-poster bg-cinema-surface overflow-hidden"
+      >
         {posterSrc ? (
           <img
             src={posterSrc}
@@ -66,60 +85,19 @@ export const MovieCard: React.FC<MovieCardProps> = ({
             </span>
           </div>
         )}
-
-        {/* Desktop Hover Quick Action Overlay */}
-        <div className="hidden lg:flex absolute inset-0 bg-black/75 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-250 p-4 flex-col justify-end gap-2.5 z-20">
-          {movie.status === 'now_showing' ? (
-            <a
-              href={`/movies/${movie.id}`}
-              onClick={(e) => {
-                if (onBookNow) {
-                  e.preventDefault();
-                  onBookNow(movie);
-                }
-              }}
-              className="w-full py-2.5 px-3 min-h-[40px] flex items-center justify-center gap-2 rounded-btn bg-brand hover:bg-brand-600 text-white font-semibold text-xs tracking-wide uppercase transition-colors shadow-lg"
-            >
-              <Ticket className="w-3.5 h-3.5" />
-              <span>Book Tickets</span>
-            </a>
-          ) : (
-            <a
-              href={`/movies/${movie.id}`}
-              className="w-full py-2.5 px-3 min-h-[40px] flex items-center justify-center gap-2 rounded-btn bg-cinema-card hover:bg-cinema-hover text-white font-semibold text-xs tracking-wide uppercase border border-cinema-border transition-colors"
-            >
-              <Info className="w-3.5 h-3.5 text-accent-gold" />
-              <span>View Details</span>
-            </a>
-          )}
-
-          {movie.trailerEmbedUrl && onWatchTrailer && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onWatchTrailer(movie);
-              }}
-              className="w-full py-2 px-3 min-h-[36px] flex items-center justify-center gap-1.5 rounded-btn bg-white/10 hover:bg-white/20 text-white font-medium text-xs border border-white/20 transition-colors"
-            >
-              <Play className="w-3 h-3 fill-white" />
-              <span>Trailer</span>
-            </button>
-          )}
-        </div>
-      </div>
+      </Link>
 
       {/* Card Info Content */}
       <div className="p-3 sm:p-3.5 flex flex-col flex-1 justify-between gap-1.5">
         <div>
           {/* Main Title Link (max 2 lines) */}
-          <a
-            href={`/movies/${movie.id}`}
+          <Link
+            to={`/movies/${movie.id}`}
             className="block text-sm sm:text-base font-bold text-cinema-text hover:text-brand line-clamp-2 leading-snug transition-colors focus:outline-none"
             title={movie.title}
           >
             {movie.title}
-          </a>
+          </Link>
 
           {/* Meta line: Genre · Duration */}
           <div className="mt-1 flex items-center gap-1.5 text-xs text-cinema-muted truncate">
@@ -136,7 +114,8 @@ export const MovieCard: React.FC<MovieCardProps> = ({
         </div>
       </div>
     </div>
-  </SpotlightCard>
+      </SpotlightCard>
+    </div>
   );
 };
 

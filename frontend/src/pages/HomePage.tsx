@@ -5,18 +5,9 @@ import MovieDiscovery from '../components/discovery/MovieDiscovery';
 import Footer from '../components/layout/Footer';
 import AmbientEffects from '../components/effects/AmbientEffects';
 import { useFeaturedMovies } from '../hooks/useMovies';
-import { Movie } from '../types/movie';
 
 export const HomePage: React.FC = () => {
   const { data: featuredMovies = [], isLoading, isError, refetch } = useFeaturedMovies();
-
-  const handleBookNow = (movie: Movie) => {
-    // Smoothly scroll down to discovery section or navigate to movie detail
-    const el = document.getElementById('discover') || document.getElementById('discovery');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
 
   return (
     <div className="relative min-h-screen bg-transparent text-cinema-text flex flex-col overflow-x-clip">
@@ -38,11 +29,10 @@ export const HomePage: React.FC = () => {
           isLoading={isLoading}
           isError={isError}
           onRetry={() => refetch()}
-          onBookNow={handleBookNow}
         />
 
         {/* Section B: Movie Discovery (Browse, Search, Filter, Pagination) */}
-        <MovieDiscovery onBookNow={handleBookNow} />
+        <MovieDiscovery />
       </main>
 
       {/* Footer */}

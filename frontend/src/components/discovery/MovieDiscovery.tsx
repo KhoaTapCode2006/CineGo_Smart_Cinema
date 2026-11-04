@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ArrowUpDown, RotateCcw, X } from 'lucide-react';
 import { Movie } from '../../types/movie';
 import Tabs, { TabItem } from '../ui/Tabs';
 import MovieCard from './MovieCard';
+import MoviePopup from './MoviePopup';
 import Pagination from '../ui/Pagination';
 import EmptyState from '../ui/EmptyState';
 import ErrorState from '../ui/ErrorState';
@@ -10,14 +11,11 @@ import { MovieCardSkeleton } from '../ui/Skeletons';
 import TrailerModal from '../ui/TrailerModal';
 import ScrollReveal from '../effects/ScrollReveal';
 import { useMovies } from '../../hooks/useMovies';
+import { useMoviePreview } from '../../hooks/useMoviePreview';
 import { useCatalogFilters, SortOption } from '../../hooks/useCatalogFilters';
 import { cn } from '../../utils/cn';
 
-export interface MovieDiscoveryProps {
-  onBookNow?: (movie: Movie) => void;
-}
-
-export const MovieDiscovery: React.FC<MovieDiscoveryProps> = ({ onBookNow }) => {
+export const MovieDiscovery: React.FC = () => {
   const {
     filters,
     setGenre,
@@ -30,6 +28,7 @@ export const MovieDiscovery: React.FC<MovieDiscoveryProps> = ({ onBookNow }) => 
   } = useCatalogFilters();
 
   const [activeTrailerMovie, setActiveTrailerMovie] = useState<Movie | null>(null);
+  const { preview, open, close, keepOpen, dismiss } = useMoviePreview();
 
   // 1. Fetch movies from React Query synced with URL search params
   const { data, isLoading, isError, refetch } = useMovies({
@@ -58,6 +57,11 @@ export const MovieDiscovery: React.FC<MovieDiscoveryProps> = ({ onBookNow }) => 
         return list;
     }
   }, [data?.items, filters.sort]);
+
+  // Cards unmount without a mouseleave when the list changes, leaving the popup orphaned.
+  useEffect(() => {
+    dismiss();
+  }, [sortedMovies, dismiss]);
 
   const hasActiveFilters = Boolean(
     filters.q || (filters.genre && filters.genre !== 'All') || filters.sort !== 'title-asc'
@@ -219,8 +223,8 @@ export const MovieDiscovery: React.FC<MovieDiscoveryProps> = ({ onBookNow }) => 
               <MovieCard
                 key={movie.id}
                 movie={movie}
-                onBookNow={onBookNow}
-                onWatchTrailer={(m) => setActiveTrailerMovie(m)}
+                onPreviewOpen={open}
+                onPreviewClose={close}
               />
             ))}
           </div>
@@ -237,6 +241,22 @@ export const MovieDiscovery: React.FC<MovieDiscoveryProps> = ({ onBookNow }) => 
             </div>
           )}
         </>
+      )}
+
+      {/* Hover Movie Popup */}
+      {preview && (
+        <MoviePopup
+          key={preview.movie.id}
+          movie={preview.movie}
+          anchor={preview.anchor}
+          onMouseEnter={keepOpen}
+          onMouseLeave={close}
+          onDismiss={dismiss}
+          onWatchTrailer={(m) => {
+            dismiss();
+            setActiveTrailerMovie(m);
+          }}
+        />
       )}
 
       {/* Trailer Modal */}

@@ -72,6 +72,16 @@ export interface ShowtimeOut {
 }
 
 /**
+ * Raw CinemaOut from GET /api/v1/cinemas.
+ */
+export interface CinemaOut {
+  id: string;
+  name: string;
+  address: string;
+  status: string;
+}
+
+/**
  * Format duration minutes into "Xh Ym" or "Xm".
  */
 export function formatDuration(minutes: number): string {
@@ -98,6 +108,15 @@ export function formatLanguage(code: string | null): string {
 }
 
 /**
+ * Extract the 11-character video ID from standard YouTube URLs.
+ */
+function getYouTubeVideoId(url: string): string | null {
+  // Pattern 1: https://www.youtube.com/watch?v=VIDEO_ID
+  const watchMatch = url.match(/(?:watch\?v=|v\/|embed\/|youtu\.be\/|shorts\/)([a-zA-Z0-9_-]{11})/);
+  return watchMatch ? watchMatch[1] : null;
+}
+
+/**
  * Extract YouTube embed URL from standard YouTube URLs.
  */
 export function getYouTubeEmbedUrl(url: string | null): string | null {
@@ -106,15 +125,22 @@ export function getYouTubeEmbedUrl(url: string | null): string | null {
     // If it's already an embed URL
     if (url.includes('/embed/')) return url;
 
-    // Pattern 1: https://www.youtube.com/watch?v=VIDEO_ID
-    const watchMatch = url.match(/(?:watch\?v=|v\/|embed\/|youtu\.be\/|shorts\/)([a-zA-Z0-9_-]{11})/);
-    if (watchMatch && watchMatch[1]) {
-      return `https://www.youtube.com/embed/${watchMatch[1]}?autoplay=1&rel=0`;
+    const videoId = getYouTubeVideoId(url);
+    if (videoId) {
+      return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
     }
   } catch {
     // fallback
   }
   return null;
+}
+
+/**
+ * Get the 16:9 thumbnail YouTube publishes for every video.
+ */
+export function getYouTubeThumbnailUrl(url: string | null): string | null {
+  const videoId = url ? getYouTubeVideoId(url) : null;
+  return videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
 }
 
 /**

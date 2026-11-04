@@ -50,3 +50,32 @@ export const HeroSliderSkeleton: React.FC = () => {
     </div>
   );
 };
+
+export const MovieDetailSkeleton: React.FC = () => {
+  return (
+    <div
+      aria-label="Loading movie"
+      className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-14 flex flex-col md:flex-row items-center md:items-start gap-8 lg:gap-12"
+    >
+      <div className="w-48 sm:w-56 md:w-64 lg:w-72 aspect-poster shrink-0 rounded-2xl bg-white/5 border border-white/10 animate-pulse" />
+      <div className="w-full max-w-2xl space-y-4">
+        <div className="w-28 h-6 rounded-full bg-white/10 animate-pulse" />
+        <div className="w-3/4 h-10 sm:h-12 rounded-lg bg-white/10 animate-pulse" />
+        <div className="flex gap-2">
+          <div className="w-20 h-6 rounded-full bg-white/10 animate-pulse" />
+          <div className="w-16 h-6 rounded-full bg-white/10 animate-pulse" />
+          <div className="w-12 h-6 rounded bg-white/10 animate-pulse" />
+        </div>
+        <div className="space-y-2 pt-2">
+          <div className="w-full h-4 rounded bg-white/10 animate-pulse" />
+          <div className="w-5/6 h-4 rounded bg-white/10 animate-pulse" />
+          <div className="w-2/3 h-4 rounded bg-white/10 animate-pulse" />
+        </div>
+        <div className="flex gap-3 pt-4">
+          <div className="w-40 h-12 rounded-full bg-brand/30 animate-pulse" />
+          <div className="w-36 h-12 rounded-full bg-white/10 animate-pulse" />
+        </div>
+      </div>
+    </div>
+  );
+};
