@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Film, User, Menu, X, Sparkles, Search } from 'lucide-react';
+import { User, Menu, X, Sparkles, Search } from 'lucide-react';
+import CineGoLogo from '../CineGoLogo';
 import NavbarSearch from './NavbarSearch';
 import NavbarGenreDropdown from './NavbarGenreDropdown';
 import { cn } from '../../utils/cn';
@@ -44,19 +45,9 @@ export const Navbar: React.FC<NavbarProps> = () => {
           <div className="flex items-center gap-3 flex-shrink-0">
             <a
               href="/"
-              className="flex items-center gap-2.5 group focus:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-btn"
+              className="flex items-center group focus:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-btn"
             >
-              <div className="w-9 h-9 rounded-btn bg-brand flex items-center justify-center shadow-lg shadow-brand/30 group-hover:scale-105 transition-transform duration-200">
-                <Film className="w-5 h-5 text-white" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-lg font-black tracking-wider text-white uppercase flex items-center gap-1">
-                  Cine<span className="text-brand">Go</span>
-                </span>
-                <span className="text-[10px] font-semibold text-cinema-muted tracking-widest uppercase -mt-1">
-                  Smart Cinema
-                </span>
-              </div>
+              <CineGoLogo className="h-10 w-auto transition-transform duration-200 group-hover:scale-105" />
             </a>
           </div>
 
