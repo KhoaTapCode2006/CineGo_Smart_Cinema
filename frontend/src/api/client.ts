@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios';
+import { useAuthStore } from '../store/authStore';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
@@ -13,9 +14,19 @@ export const apiClient = axios.create({
 // Attach Bearer token if stored
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('cinego_token') || localStorage.getItem('access_token');
+    let token = localStorage.getItem('cinego_token') || localStorage.getItem('access_token');
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      if (token.startsWith('{')) {
+        try {
+          const parsed = JSON.parse(token);
+          token = parsed?.state?.access_token || parsed?.access_token || null;
+        } catch {
+          token = null;
+        }
+      }
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
@@ -29,6 +40,11 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('cinego_token');
       localStorage.removeItem('access_token');
+      try {
+        useAuthStore.getState().logout();
+      } catch {
+        // Safe fallback if called before store init
+      }
       // If unauthorized, redirect to /login only if not already on login page
       if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
         // Optional redirect: window.location.href = '/login';
