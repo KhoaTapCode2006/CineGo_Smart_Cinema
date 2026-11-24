@@ -12,9 +12,17 @@ export interface TicketItem {
   checked_in_at: string | null;
 }
 
+export type TicketOut = TicketItem;
+
 export async function getMyTickets(page = 1, pageSize = 50): Promise<TicketItem[]> {
   const { data } = await apiClient.get<TicketItem[]>('/tickets', {
     params: { page, page_size: pageSize },
   });
   return data || [];
 }
+
+export async function getTicketDetail(ticketCode: string): Promise<TicketItem> {
+  const { data } = await apiClient.get<TicketItem>(`/tickets/${encodeURIComponent(ticketCode)}`);
+  return data;
+}
+
