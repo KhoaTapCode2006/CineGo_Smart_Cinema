@@ -95,6 +95,7 @@ export const ShootingStars: React.FC<ShootingStarsProps> = ({
                 width: `${meteor.length}px`,
                 animation: `meteorFly ${meteor.duration}s cubic-bezier(0.22, 0.61, 0.36, 1) infinite`,
                 animationDelay: `${meteor.delay}s`,
+                animationFillMode: 'both',
                 '--meteor-distance': `${meteor.distance}px`,
               } as React.CSSProperties
             }

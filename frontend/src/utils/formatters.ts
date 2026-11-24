@@ -18,6 +18,7 @@ export function formatDate(isoString: string): string {
   try {
     const d = new Date(isoString);
     return new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Ho_Chi_Minh',
       weekday: 'short',
       month: 'short',
       day: 'numeric',
@@ -28,12 +29,13 @@ export function formatDate(isoString: string): string {
 }
 
 /**
- * Format an ISO date string to time only (e.g., "19:30").
+ * Format an ISO date string to time only (e.g., "19:30") in Vietnam timezone.
  */
 export function formatTime(isoString: string): string {
   try {
     const d = new Date(isoString);
     return new Intl.DateTimeFormat('vi-VN', {
+      timeZone: 'Asia/Ho_Chi_Minh',
       hour: '2-digit',
       minute: '2-digit',
       hour12: false,

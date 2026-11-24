@@ -238,7 +238,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({
       <section
         aria-label="Featured movies error"
         style={{
-          height: 'clamp(560px, 82vh, 800px)',
+          height: 'clamp(540px, 80vh, 720px)',
         }}
         className="relative w-full -mt-16 bg-transparent overflow-hidden flex items-center justify-center select-none"
       >
@@ -273,7 +273,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({
       <section
         aria-label="No featured movies"
         style={{
-          height: 'clamp(560px, 82vh, 800px)',
+          height: 'clamp(540px, 80vh, 720px)',
         }}
         className="relative w-full -mt-16 bg-transparent overflow-hidden flex items-center justify-center select-none"
       >
@@ -310,7 +310,7 @@ export const HeroCarousel: React.FC<HeroCarouselProps> = ({
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       style={{
-        height: 'clamp(560px, 82vh, 800px)',
+        height: 'clamp(540px, 80vh, 720px)',
       }}
       className="relative w-full -mt-16 bg-transparent overflow-hidden flex items-center justify-center select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand"
     >

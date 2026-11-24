@@ -129,14 +129,12 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
   return (
     <div
       ref={containerRef}
-      className={cn('relative transition-all duration-300 ease-out', className)}
+      className={cn(
+        'relative w-full md:w-auto md:flex-1 md:min-w-[200px] md:max-w-[360px] transition-all duration-300 ease-out',
+        className
+      )}
     >
-      <div
-        className={cn(
-          'relative flex items-center transition-all duration-300',
-          'w-full md:w-[280px] focus-within:md:w-[360px]'
-        )}
-      >
+      <div className="relative flex items-center w-full transition-all duration-300">
         {/* Search Icon */}
         <Search
           className="absolute left-3.5 w-4 h-4 text-slate-400 pointer-events-none"
@@ -158,16 +156,16 @@ export const NavbarSearch: React.FC<NavbarSearchProps> = ({
             }
           }}
           onBlur={() => setIsFocused(false)}
-          placeholder="Search movies... (press '/' to focus)"
-          aria-label="Search movies"
-          className="w-full pl-9 pr-9 py-1.5 min-h-[38px] bg-white/5 border border-white/10 hover:border-white/20 focus:border-white/30 backdrop-blur-md rounded-full text-xs sm:text-sm text-white placeholder-slate-400 [text-shadow:_0_1px_2px_rgba(0,0,0,0.6)] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-brand focus:bg-white/10"
+          placeholder="Tìm phim..."
+          aria-label="Tìm phim"
+          className="w-full h-10 pl-9 pr-9 bg-white/5 border border-white/10 hover:border-white/20 focus:border-white/30 backdrop-blur-md rounded-full text-xs sm:text-sm text-white placeholder-slate-400 [text-shadow:_0_1px_2px_rgba(0,0,0,0.6)] transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-brand focus:bg-white/10"
         />
 
         {/* Keyboard shortcut indicator "/" (shown when empty & not focused) */}
         {!inputValue && !isFocused && (
-          <span className="hidden lg:inline-flex absolute right-3 items-center justify-center w-5 h-5 text-[10px] font-semibold text-slate-400 bg-white/10 rounded border border-white/10 pointer-events-none select-none">
+          <kbd className="hidden sm:inline-flex absolute right-3 items-center justify-center w-5 h-5 text-[10px] font-mono font-semibold text-slate-400 bg-white/10 rounded border border-white/10 pointer-events-none select-none">
             /
-          </span>
+          </kbd>
         )}
 
         {/* Loading Spinner or Clear Button */}

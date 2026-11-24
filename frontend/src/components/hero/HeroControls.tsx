@@ -26,15 +26,12 @@ export const HeroControls: React.FC<HeroControlsProps> = ({
 
   return (
     <>
-      {/* 1. Prev & Next Circular Arrow Buttons (Vertically centered in content box) */}
+      {/* 1. Prev & Next Circular Arrow Buttons (Vertically centered) */}
       <button
         type="button"
         onClick={onPrev}
         aria-label="Previous slide"
-        style={{
-          top: 'calc(50% + (var(--nav-h, 4rem) - 120px) / 2)',
-        }}
-        className="hidden md:flex absolute left-4 lg:left-8 -translate-y-1/2 z-30 w-11 h-11 lg:w-12 lg:h-12 rounded-full bg-[#070a1f]/50 hover:bg-[#070a1f]/85 text-white/80 hover:text-white border border-white/15 backdrop-blur-md items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 shadow-xl cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        className="hidden md:flex absolute left-4 lg:left-8 top-1/2 -translate-y-1/2 z-30 w-11 h-11 lg:w-12 lg:h-12 rounded-full bg-[#070a1f]/50 hover:bg-[#070a1f]/85 text-white/80 hover:text-white border border-white/15 backdrop-blur-md items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 shadow-xl cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
       >
         <ChevronLeft className="w-5 h-5 lg:w-6 lg:h-6 -translate-x-0.5" />
       </button>
@@ -43,20 +40,17 @@ export const HeroControls: React.FC<HeroControlsProps> = ({
         type="button"
         onClick={onNext}
         aria-label="Next slide"
-        style={{
-          top: 'calc(50% + (var(--nav-h, 4rem) - 120px) / 2)',
-        }}
-        className="hidden md:flex absolute right-4 lg:right-8 -translate-y-1/2 z-30 w-11 h-11 lg:w-12 lg:h-12 rounded-full bg-[#070a1f]/50 hover:bg-[#070a1f]/85 text-white/80 hover:text-white border border-white/15 backdrop-blur-md items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 shadow-xl cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        className="hidden md:flex absolute right-4 lg:right-8 top-1/2 -translate-y-1/2 z-30 w-11 h-11 lg:w-12 lg:h-12 rounded-full bg-[#070a1f]/50 hover:bg-[#070a1f]/85 text-white/80 hover:text-white border border-white/15 backdrop-blur-md items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 shadow-xl cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
       >
         <ChevronRight className="w-5 h-5 lg:w-6 lg:h-6 translate-x-0.5" />
       </button>
 
-      {/* 2. Progress Dots: Bottom-center of hero banner */}
-      <div className="absolute inset-x-0 bottom-5 sm:bottom-6 pointer-events-none z-30">
-        <div className="max-w-[1280px] mx-auto px-6 flex justify-center">
+      {/* 2. Progress Dots: Placed snugly beneath hero content */}
+      <div className="absolute inset-x-0 bottom-4 sm:bottom-5 pointer-events-none z-30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-center">
           <nav
             aria-label="Carousel pagination"
-            className="pointer-events-auto flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-black/40 backdrop-blur-md border border-white/10 shadow-md"
+            className="pointer-events-auto flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/10 shadow-lg"
           >
             {Array.from({ length: total }).map((_, idx) => {
               const isActive = idx === activeIndex;

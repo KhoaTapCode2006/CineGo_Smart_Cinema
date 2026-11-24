@@ -90,6 +90,11 @@ export async function createOrder(payload: OrderCreatePayload): Promise<OrderRes
     subtotal: Number(data.subtotal),
     discount: Number(data.discount),
     total: Number(data.total),
+    items: (data.items || []).map((item) => ({
+      ...item,
+      unit_price: Number(item.unit_price),
+      amount: Number(item.amount),
+    })),
   };
 }
 
@@ -104,6 +109,11 @@ export async function getOrder(orderId: string): Promise<OrderResponse> {
     subtotal: Number(data.subtotal),
     discount: Number(data.discount),
     total: Number(data.total),
+    items: (data.items || []).map((item) => ({
+      ...item,
+      unit_price: Number(item.unit_price),
+      amount: Number(item.amount),
+    })),
   };
 }
 

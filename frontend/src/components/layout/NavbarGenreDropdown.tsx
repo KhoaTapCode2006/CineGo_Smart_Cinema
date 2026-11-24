@@ -105,7 +105,7 @@ export const NavbarGenreDropdown: React.FC<NavbarGenreDropdownProps> = ({
         aria-expanded={isOpen}
         aria-label="Filter by genre"
         className={cn(
-          'inline-flex items-center gap-1.5 px-3.5 py-1.5 min-h-[38px] rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand select-none',
+          'inline-flex items-center gap-1.5 px-3.5 h-10 rounded-full text-xs sm:text-sm font-semibold transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand select-none',
           selectedGenre !== 'All'
             ? 'bg-brand text-white border border-brand shadow-md shadow-brand/25'
             : 'bg-white/5 hover:bg-white/10 text-white/90 hover:text-white border border-white/10 hover:border-white/20 backdrop-blur-md'

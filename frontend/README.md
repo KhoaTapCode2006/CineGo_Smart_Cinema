@@ -1,6 +1,6 @@
 # CineGo Smart Cinema — Frontend
 
-The web client for CineGo Smart Cinema. It reads its data from the FastAPI backend API (`/api/v1`) and provides a modern, responsive, and cinematic movie booking experience.
+The web client for CineGo Smart Cinema. It connects to the FastAPI backend API (`/api/v1`) and provides a modern, responsive, and cinematic movie booking experience.
 
 ---
 
@@ -8,133 +8,125 @@ The web client for CineGo Smart Cinema. It reads its data from the FastAPI backe
 
 | Technology | Purpose |
 | :--- | :--- |
-| **Vite + React 18** | Build tool and component framework |
-| **TypeScript** | Strict type safety |
-| **Tailwind CSS** | Styling with custom cinematic dark design tokens |
-| **React Router v6** | Client-side routing and URL state sync |
-| **TanStack Query (v5)** | Server state management, caching, and auto-refetching |
-| **Axios** | HTTP client with automatic Bearer token and FastAPI error normalization |
-| **Lucide Icons** | Consistent iconography |
+| **Vite + React 18** | High-performance build tool and UI library |
+| **TypeScript** | Strict end-to-end type safety |
+| **Tailwind CSS** | Custom cinematic dark theme tokens and utility styling |
+| **React Router v6** | Client-side routing with protected routes and state management |
+| **TanStack Query (v5)** | Server state management, smart caching, and re-fetching |
+| **Zustand** | Lightweight client state for auth and seat booking store |
+| **Axios** | HTTP client with automatic Bearer token injection and error handling |
+| **qrcode.react** | SVG QR Code generation for cinema ticket check-in |
+| **Lucide React** | Consistent iconography |
+| **Vitest & Testing Library** | Unit and component testing suite |
 
 ---
 
-## 🎨 Design System & Theme Tokens
+## ⚙️ Biến Môi Trường (Environment Variables)
 
-The UI follows the CineGo Smart Cinema dark theme:
-- **Background**: `#0F1220` (`bg-cinema-bg`)
-- **Surface / Card**: `#181C2E` (`bg-cinema-card`, `bg-cinema-surface`)
-- **Card Hover**: `#222942` (`bg-cinema-hover`)
-- **Borders**: `#262D4A` (`border-cinema-border`)
-- **Text Primary**: `#F4F5F7` (`text-cinema-text`)
-- **Text Muted**: `#9BA3B8` (`text-cinema-muted`)
-- **Primary Action (Brand Red)**: `#E50914` (`bg-brand`, `text-brand`)
-- **Accent (Gold)**: `#F5B301` (`bg-accent-gold`, `text-accent-gold`)
-- **Border Radius**: Cards = `12px` (`rounded-card`), Buttons & Inputs = `8px` (`rounded-btn`)
-- **Typography**: Inter (system-ui fallback)
-- **Transitions**: 200–300ms smooth cubic bezier
-
----
-
-## 📂 Project Structure
-
-```text
-frontend/src/
-├── api/
-│   ├── client.ts          # Axios client with auth interceptor & FastAPI error normalizer
-│   └── catalog.ts         # Endpoints for movies, showtimes, cinemas + offline fallback
-├── app/
-│   └── App.tsx            # QueryClientProvider & Root app wrapper
-├── components/
-│   ├── discovery/
-│   │   ├── MovieCard.tsx  # 2:3 portrait card with hover actions & age badge
-│   │   └── MovieDiscovery.tsx # Sticky filter toolbar, genre chips, responsive grid, pagination
-│   ├── hero/
-│   │   ├── Ring3D.tsx     # 3D rotating stage with perspective & continuous rotation
-│   │   ├── HeroInfoPanel.tsx # Active movie metadata, chips (flex-wrap) & action buttons
-│   │   ├── HeroControls.tsx # Prev/Next arrows + 5 dots with autoplay progress bar
-│   │   ├── HeroSlider.tsx # Fixed-height container, state management, keyboard & swipe
-│   │   ├── useRingGeometry.ts # Computes card width W, radius R & perspective dynamically
-│   │   └── useAutoplay.ts # 4.5s autoplay timer, pauses on hover/focus/tab hidden
-│   ├── layout/
-│   │   ├── Navbar.tsx     # Sticky glassmorphism header
-│   │   └── Footer.tsx     # Footer branding and information
-│   └── ui/
-│       ├── AgeRatingBadge.tsx # Standardized rating chips (P, K, T13, T16, T18)
-│       ├── EmptyState.tsx # Themed empty states with clear filters action
-│       ├── ErrorState.tsx # Connection error with retry trigger
-│       ├── GenreChip.tsx  # Reusable filter chip (44px touch target)
-│       ├── Pagination.tsx # Accessible numbered pagination
-│       ├── SearchInput.tsx # Debounced search input with clear button
-│       ├── Skeletons.tsx  # Pulsing loading placeholders
-│       ├── StatusBadge.tsx # "Now Showing" / "Coming Soon" live indicator
-│       ├── Tabs.tsx       # Animated underline tab list
-│       └── TrailerModal.tsx # Accessible 16:9 YouTube video player modal
-├── data/
-│   └── mockMovies.ts      # 12 fictional movies for offline testing & edge-case mockups
-├── hooks/
-│   └── useMovies.ts       # TanStack Query hooks (useMovies, useFeaturedMovies, useGenres)
-├── pages/
-│   └── HomePage.tsx       # Home page composing Hero Slider and Movie Discovery
-├── types/
-│   └── movie.ts           # Backend raw types (MovieOut) & Frontend models + mappers
-├── utils/
-│   ├── cn.ts              # clsx + twMerge utility
-│   └── formatters.ts      # Currency (VND), date, and time formatters
-├── index.css              # Tailwind base, dark mode, focus rings & scrollbar styles
-└── main.tsx               # Entry point
-```
-
----
-
-## ⚙️ Environment Variables
-
-Create or edit `.env` in the `frontend` root:
+Tạo file `.env` tại thư mục gốc `frontend/`:
 
 ```env
-# Base URL for the FastAPI backend (all routes are prefixed with /api/v1)
+# Base URL cho FastAPI backend (mặc định prefix /api/v1)
 VITE_API_URL=http://localhost:8000/api/v1
 
-# Real-time WebSocket server URL
-VITE_SOCKET_URL=http://localhost:8000
-
-# Set to true to force local mock dataset fallback during UI design & testing
+# Bật/tắt chế độ dữ liệu giả lập (mock data)
+# false = kết nối API backend thật (khuyên dùng)
+# true  = dùng mock data nội bộ khi backend chưa chạy
 VITE_USE_MOCK=false
 ```
 
+| Biến | Mặc định | Mô tả |
+| :--- | :--- | :--- |
+| `VITE_API_URL` | `http://localhost:8000/api/v1` | Đường dẫn API backend FastAPI |
+| `VITE_USE_MOCK` | `false` | `false`: gọi API backend thật; `true`: dùng dữ liệu mock nội bộ |
+
 ---
 
-## 🚀 Running Front-End and Back-End Together
+## 🚀 Hướng Dẫn Cài Đặt & Khởi Chạy
 
-### 1. Start the Back-End (FastAPI)
-In a terminal at repository root or `backend/`:
-```bash
-# Using Python virtual environment
-cd backend
-python -m venv .venv
-# Windows PowerShell:
-.venv\Scripts\Activate.ps1
-# Linux / macOS:
-# source .venv/bin/activate
-
-pip install -r requirements.txt
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-```
-- Swagger UI will be available at: `http://localhost:8000/docs`
-- Health check: `http://localhost:8000/health/live`
-
-### 2. Start the Front-End (Vite + React)
-In a second terminal:
+### 1. Cài đặt dependencies
 ```bash
 cd frontend
 npm install
+```
+
+### 2. Chạy môi trường phát triển (Development)
+```bash
 npm run dev
 ```
-- Web Application will be live at: `http://localhost:3000`
-- The front-end connects directly to `http://localhost:8000/api/v1`.
-- If the backend is not yet populated or offline, the front-end automatically falls back to the rich 12-movie design dataset so you can test all UI states immediately!
+Ứng dụng sẽ chạy tại: `http://localhost:3000` (hoặc cổng hiển thị trên terminal).
 
-### 3. Build & Typecheck
+### 3. Kiểm tra kiểu dữ liệu & Build production
 ```bash
-cd frontend
 npm run build
 ```
+Lệnh thực thi `tsc -b && vite build` để kiểm tra toàn bộ lỗi TypeScript và tạo gói production tối ưu trong thư mục `dist/`.
+
+### 4. Chạy kiểm thử tự động (Unit Tests)
+```bash
+npm test
+```
+Chạy toàn bộ test suites với Vitest (bao gồm kiểm thử đặt vé, thanh toán, chọn ghế, hiển thị vé QR).
+
+---
+
+## 👤 Danh Sách Tài Khoản Demo
+
+Hệ thống được khởi tạo sẵn các tài khoản demo (mật khẩu chung: **`Password123`**):
+
+| Email | Mật khẩu | Họ và tên | Vai trò | Ghi chú |
+| :--- | :--- | :--- | :--- | :--- |
+| `customer1@cinego.vn` | `Password123` | Nguyễn Văn An | Customer | Khách hàng mới, đặt vé từ đầu |
+| `customer2@cinego.vn` | `Password123` | Trần Thị Bình | Customer | Khách hàng thông thường |
+| `customer3@cinego.vn` | `Password123` | Lê Hoàng Nam | Customer | **Đã có sẵn vé QR thanh toán** (tiện test ngay mục Vé của tôi) |
+| `staff@cinego.vn` | `Password123` | Trần Thị Nhân Viên | Staff | Nhân viên rạp soát vé / check-in QR |
+| `admin@cinego.vn` | `Password123` | Admin CineGo | Admin | Quản trị viên hệ thống |
+
+> [!TIP]
+> Bạn có thể sử dụng thông tin email và mật khẩu trong bảng trên để đăng nhập tại trang `/login`.
+
+---
+
+## 🎬 Toàn Bộ Luồng Trải Nghiệm Người Dùng (User Journey)
+
+1. **Trang chủ (`/`)**:
+   - Hero banner động với các phim nổi bật, nút xem trailer và đặt vé nhanh.
+   - Thanh tìm kiếm và bộ lọc thể loại theo thời gian thực.
+   - Danh sách phim Đang chiếu (*Now Showing*) và Sắp chiếu (*Coming Soon*).
+2. **Chi tiết phim (`/movies/:id`)**:
+   - Thông tin chi tiết: đạo diễn, diễn viên, thời lượng, phân loại độ tuổi, ngôn ngữ.
+   - Xem trailer modal định dạng 16:9.
+   - Lịch chiếu theo ngày và cụm rạp.
+3. **Chọn suất chiếu**:
+   - Chọn rạp và khung giờ chiếu phù hợp.
+   - Bấm **"Book Tickets"** chuyển tiếp đến bước chọn ghế.
+4. **Đăng nhập (`/login`)**:
+   - Nếu chưa đăng nhập, hệ thống tự động điều hướng sang trang Đăng nhập và giữ lại đích đến thông qua query parameter `?redirect=...`.
+   - Sau khi đăng nhập thành công, tự động quay lại đúng màn hình đặt chỗ.
+5. **Chọn ghế & Giữ ghế (`/showtimes/:showtimeId/seats`)**:
+   - Sơ đồ ghế tương tác trực quan (Standard, VIP, Sweetbox) với trạng thái khả dụng, đang giữ, đã bán.
+   - Kết nối WebSocket cập nhật trạng thái ghế theo thời gian thực (real-time seat map).
+   - Tính năng **Smart Seat** tự động gợi ý vị trí ghế tối ưu theo số lượng và khu vực.
+   - Bấm **"Tiếp tục"** để gửi yêu cầu giữ ghế nguyên tử (`POST /showtimes/:id/seat-holds`) trong 5 phút.
+6. **Xác nhận đơn & Thanh toán (`/checkout`)**:
+   - Đếm ngược thời gian giữ ghế (countdown timer).
+   - Chọn thêm bắp nước, combo đồ uống.
+   - Nhập mã voucher giảm giá (nếu có).
+   - Xác nhận đơn hàng (`POST /orders`).
+   - Chọn phương thức thanh toán giả lập (`mock_card`, `mock_wallet`, `mock_cash`) với cơ chế `idempotency_key` chống trùng lặp giao dịch.
+7. **Nhận vé QR điện tử (`/tickets`)**:
+   - Hiển thị danh sách vé đã đặt với đầy đủ 9 trường thông tin (`TicketOut`).
+   - Thời gian hiển thị chuẩn múi giờ Việt Nam (`Asia/Ho_Chi_Minh` - `DD/MM/YYYY HH:mm`).
+   - Badge trạng thái tiếng Việt: **Đã phát hành**, **Đã check-in**, **Hết hạn**, **Đã hủy**.
+   - Làm nổi bật vé vừa thanh toán thành công thông qua query param `?new=...`.
+   - Bấm vào từng vé để mở Modal chi tiết kèm mã QR khổ lớn phục vụ việc soát vé.
+
+---
+
+## 📱 Khả Năng Tương Thích Di Động (Mobile 375px)
+
+- Giao diện được tối ưu hoàn toàn cho màn hình nhỏ từ **375px**:
+  - **Navbar**: Menu trượt mượt mà, thanh tìm kiếm dạng mở rộng (collapsible search sheet).
+  - **Sơ đồ ghế**: Vùng cuộn ngang mượt mà (`overflow-x-auto no-scrollbar`), thanh đặt vé ghim cố định ở đáy màn hình.
+  - **Trang thanh toán**: Danh mục bắp nước và phương thức thanh toán tự động co giãn 1 cột trên mobile.
+  - **Trang vé & Modal QR**: Khung mã QR tự co giãn theo tỷ lệ màn hình điện thoại.

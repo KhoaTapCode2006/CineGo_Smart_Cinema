@@ -216,20 +216,19 @@ export const HeroSlide: React.FC<HeroSlideProps> = ({
 
       {/* ---------------------------------------------------------------------- */}
       {/* LAYER B: Content Layer (relative z-10, NOT masked)                      */}
-      {/* One flex row: items-center, justify-between, max-w-[1280px], px-6      */}
-      {/* pt = navbar height (--nav-h), pb = 120px so text & poster share center  */}
+      {/* Balanced 2-column layout: text block + sharp poster in max-w-7xl        */}
       {/* ---------------------------------------------------------------------- */}
       <div
-        className="relative max-w-[1280px] mx-auto w-full h-full px-6 flex flex-row items-center justify-between pointer-events-none"
+        className="relative max-w-7xl mx-auto w-full h-full px-4 sm:px-6 lg:px-8 flex flex-row items-center justify-between gap-8 lg:gap-12 xl:gap-16 pointer-events-none"
         style={{
-          paddingTop: 'var(--nav-h, 4rem)',
-          paddingBottom: '120px',
+          paddingTop: 'calc(var(--nav-h, 4rem) + 0.5rem)',
+          paddingBottom: '3.5rem',
           zIndex: isActive ? 20 : isOutgoing ? 10 : 0,
           pointerEvents: isActive ? 'auto' : 'none',
         }}
       >
         {/* Left: Text Block */}
-        <div className="max-w-[560px] w-full text-left pointer-events-auto flex flex-col justify-center">
+        <div className="flex-1 max-w-2xl w-full text-left pointer-events-auto flex flex-col justify-center">
           {/* Status Badge */}
           <div className="flex items-center mb-2.5 sm:mb-3" style={getTextAnimation(180)}>
             <StatusBadge status={movie.status} size="md" />
@@ -326,10 +325,10 @@ export const HeroSlide: React.FC<HeroSlideProps> = ({
           </div>
         </div>
 
-        {/* Right: Sharp Poster Container (100% of content box, max-h-[560px], aspect-2/3, shrink-0, NOT masked) */}
+        {/* Right: Sharp Poster Container (aspect-2/3, shrink-0, balanced width) */}
         {hasPoster && (
           <div
-            className="hidden lg:flex h-full max-h-[560px] aspect-[2/3] shrink-0 items-center justify-center pointer-events-none"
+            className="hidden lg:flex h-auto max-h-[440px] xl:max-h-[480px] aspect-[2/3] shrink-0 items-center justify-center pointer-events-none"
             style={getPosterAnimationStyle()}
           >
             <img

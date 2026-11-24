@@ -85,141 +85,141 @@ export const Navbar: React.FC<NavbarProps> = () => {
       style={{ minHeight: 'var(--nav-h, 4rem)' }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-3">
-          {/* 1. Brand Logo */}
-          <div className="flex items-center gap-3 flex-shrink-0">
+        <div className="flex items-center justify-between h-16 gap-3 lg:gap-6">
+          {/* 1. Brand Logo & Primary Navigation */}
+          <div className="flex items-center gap-4 lg:gap-6 shrink-0">
             <a
               href="/"
               className="flex items-center group focus:outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-btn"
             >
-              <CineGoLogo className="h-10 w-auto transition-transform duration-200 group-hover:scale-105" />
+              <CineGoLogo className="h-9 sm:h-10 w-auto transition-transform duration-200 group-hover:scale-105" />
             </a>
+
+            {/* Desktop Navigation Links (shown on >= 1024px; hidden into menu at 768-1023px) */}
+            <nav className="hidden lg:flex items-center gap-5 xl:gap-6 shrink-0">
+              <a
+                href={discoverHref}
+                className="text-sm font-semibold text-cinema-text hover:text-brand transition-colors"
+              >
+                Movies
+              </a>
+              <a
+                href={discoverHref}
+                className="text-sm font-medium text-cinema-muted hover:text-white transition-colors"
+              >
+                Cinemas
+              </a>
+              <a
+                href={discoverHref}
+                className="text-sm font-medium text-cinema-muted hover:text-white transition-colors"
+              >
+                Offers
+              </a>
+            </nav>
           </div>
 
-          {/* 2. Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-6 flex-shrink-0">
-            <a
-              href={discoverHref}
-              className="text-sm font-semibold text-cinema-text hover:text-brand transition-colors"
-            >
-              Movies
-            </a>
-            <a
-              href="/cinemas"
-              className="text-sm font-medium text-cinema-muted hover:text-cinema-text transition-colors"
-            >
-              Cinemas
-            </a>
-            <a
-              href="/promotions"
-              className="text-sm font-medium text-cinema-muted hover:text-cinema-text transition-colors flex items-center gap-1.5"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-accent-gold" />
-              <span>Offers</span>
-            </a>
-          </nav>
-
-          {/* 3. Center Section: Search Bar & Genre Dropdown */}
-          <div className="hidden md:flex items-center gap-2.5 flex-1 justify-center max-w-xl mx-2">
-            <NavbarSearch />
+          {/* 2. Center Section: Search Bar & Genre Dropdown */}
+          <div className="hidden md:flex items-center justify-center gap-2.5 flex-1 max-w-[500px] mx-2">
+            <NavbarSearch className="flex-1 min-w-[200px] max-w-[360px]" />
             <NavbarGenreDropdown />
           </div>
 
-          {/* 4. Right Action: User Menu (logged in) or Sign In + Book Tickets Button */}
-          <div className="hidden sm:flex items-center gap-2.5 flex-shrink-0">
-            {isAuthenticated && user ? (
-              <div className="relative" ref={userMenuRef}>
-                <button
-                  type="button"
-                  onClick={() => setUserMenuOpen((prev) => !prev)}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 min-h-[38px] text-xs font-semibold rounded-btn bg-white/5 hover:bg-white/10 text-cinema-text border border-white/10 hover:border-white/20 backdrop-blur-md transition-all cursor-pointer"
-                  aria-expanded={userMenuOpen}
-                  aria-haspopup="true"
+          {/* 3. Right Action: User Menu / Sign In + Book Tickets + Responsive Menu Button */}
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+            {/* Account / User Button (sm:flex) */}
+            <div className="hidden sm:flex items-center">
+              {isAuthenticated && user ? (
+                <div className="relative" ref={userMenuRef}>
+                  <button
+                    type="button"
+                    onClick={() => setUserMenuOpen((prev) => !prev)}
+                    className="inline-flex items-center gap-2 px-3 h-10 text-xs font-semibold rounded-btn bg-white/5 hover:bg-white/10 text-cinema-text border border-white/10 hover:border-white/20 backdrop-blur-md transition-all cursor-pointer"
+                    aria-expanded={userMenuOpen}
+                    aria-haspopup="true"
+                  >
+                    <span className="w-5 h-5 rounded-full bg-brand/20 border border-brand/40 text-brand font-bold text-[10px] flex items-center justify-center">
+                      {user.full_name.charAt(0).toUpperCase()}
+                    </span>
+                    <span className="max-w-[120px] truncate">{user.full_name}</span>
+                    <ChevronDown
+                      className={cn(
+                        'w-3.5 h-3.5 text-cinema-muted transition-transform duration-200',
+                        userMenuOpen && 'rotate-180'
+                      )}
+                    />
+                  </button>
+
+                  {userMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-52 rounded-card bg-[#070a1f]/95 border border-white/15 backdrop-blur-2xl shadow-2xl py-1.5 z-50 animate-fade-in">
+                      <div className="px-3.5 py-2 border-b border-white/10">
+                        <p className="text-xs font-bold text-white truncate">{user.full_name}</p>
+                        <p className="text-[11px] text-cinema-muted truncate">{user.email}</p>
+                      </div>
+
+                      <div className="py-1">
+                        <Link
+                          to="/tickets"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
+                        >
+                          <Ticket className="w-3.5 h-3.5 text-brand" />
+                          <span>Vé của tôi</span>
+                        </Link>
+                      </div>
+
+                      <div className="border-t border-white/10 pt-1">
+                        <button
+                          type="button"
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors text-left cursor-pointer"
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                          <span>Đăng xuất</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-2 px-3.5 h-10 text-xs font-semibold rounded-btn bg-white/5 hover:bg-white/10 text-cinema-text border border-white/10 hover:border-white/20 backdrop-blur-md transition-colors"
                 >
-                  <span className="w-5 h-5 rounded-full bg-brand/20 border border-brand/40 text-brand font-bold text-[10px] flex items-center justify-center">
-                    {user.full_name.charAt(0).toUpperCase()}
-                  </span>
-                  <span className="max-w-[120px] truncate">{user.full_name}</span>
-                  <ChevronDown
-                    className={cn(
-                      'w-3.5 h-3.5 text-cinema-muted transition-transform duration-200',
-                      userMenuOpen && 'rotate-180'
-                    )}
-                  />
-                </button>
+                  <User className="w-3.5 h-3.5 text-cinema-muted" />
+                  <span>Sign In</span>
+                </Link>
+              )}
+            </div>
 
-                {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-52 rounded-card bg-[#070a1f]/95 border border-white/15 backdrop-blur-2xl shadow-2xl py-1.5 z-50 animate-fade-in">
-                    <div className="px-3.5 py-2 border-b border-white/10">
-                      <p className="text-xs font-bold text-white truncate">{user.full_name}</p>
-                      <p className="text-[11px] text-cinema-muted truncate">{user.email}</p>
-                    </div>
-
-                    <div className="py-1">
-                      <Link
-                        to="/tickets"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-200 hover:text-white hover:bg-white/10 transition-colors"
-                      >
-                        <Ticket className="w-3.5 h-3.5 text-brand" />
-                        <span>Vé của tôi</span>
-                      </Link>
-                    </div>
-
-                    <div className="border-t border-white/10 pt-1">
-                      <button
-                        type="button"
-                        onClick={handleLogout}
-                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors text-left cursor-pointer"
-                      >
-                        <LogOut className="w-3.5 h-3.5" />
-                        <span>Đăng xuất</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <Link
-                to="/login"
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 min-h-[38px] text-xs font-semibold rounded-btn bg-white/5 hover:bg-white/10 text-cinema-text border border-white/10 hover:border-white/20 backdrop-blur-md transition-colors"
-              >
-                <User className="w-3.5 h-3.5 text-cinema-muted" />
-                <span>Sign In</span>
-              </Link>
-            )}
-
+            {/* Book Tickets CTA (sm:inline-flex) */}
             <a
               href={discoverHref}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 min-h-[38px] text-xs font-bold uppercase tracking-wider rounded-btn bg-brand hover:bg-brand-600 text-white shadow-md shadow-brand/20 transition-all hover:shadow-brand/40"
+              className="hidden sm:inline-flex items-center gap-1.5 px-4 h-10 text-xs font-bold uppercase tracking-wider rounded-btn bg-brand hover:bg-brand-600 text-white shadow-md shadow-brand/20 transition-all hover:shadow-brand/40"
             >
               <span>Book Tickets</span>
             </a>
-          </div>
 
-          {/* 5. Mobile Controls: Search Toggle + Menu Toggle (<768px) */}
-          <div className="flex md:hidden items-center gap-1.5">
-            {/* Mobile Search Toggle Button */}
+            {/* Mobile Search Toggle Button (<768px) */}
             <button
               type="button"
               onClick={() => {
                 setMobileSearchOpen(!mobileSearchOpen);
                 if (mobileMenuOpen) setMobileMenuOpen(false);
               }}
-              className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-btn text-cinema-muted hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-brand"
+              className="md:hidden flex items-center justify-center w-10 h-10 rounded-btn text-cinema-muted hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-brand"
               aria-label={mobileSearchOpen ? 'Close search' : 'Open search'}
             >
               <Search className="w-5 h-5" />
             </button>
 
-            {/* Mobile Menu Toggle Button */}
+            {/* Tablet & Mobile Menu Toggle Button (<1024px) */}
             <button
               type="button"
               onClick={() => {
                 setMobileMenuOpen(!mobileMenuOpen);
                 if (mobileSearchOpen) setMobileSearchOpen(false);
               }}
-              className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-btn text-cinema-muted hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-brand"
+              className="lg:hidden flex items-center justify-center w-10 h-10 rounded-btn text-cinema-muted hover:text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-brand"
               aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -246,9 +246,9 @@ export const Navbar: React.FC<NavbarProps> = () => {
         </div>
       )}
 
-      {/* 7. Mobile Navigation Dropdown Menu */}
+      {/* 7. Mobile & Tablet Navigation Dropdown Menu (<1024px) */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-white/10 bg-[#070a1f]/95 backdrop-blur-2xl px-4 pt-3 pb-6 space-y-3 z-60 animate-fade-in">
+        <div className="lg:hidden border-b border-white/10 bg-[#070a1f]/95 backdrop-blur-2xl px-4 pt-3 pb-6 space-y-3 z-60 animate-fade-in">
           <a
             href={discoverHref}
             onClick={() => setMobileMenuOpen(false)}
@@ -257,14 +257,14 @@ export const Navbar: React.FC<NavbarProps> = () => {
             Movies
           </a>
           <a
-            href="/cinemas"
+            href={discoverHref}
             onClick={() => setMobileMenuOpen(false)}
             className="block px-3 py-2.5 rounded-btn text-base font-medium text-cinema-muted hover:text-white hover:bg-cinema-surface"
           >
             Cinemas
           </a>
           <a
-            href="/promotions"
+            href={discoverHref}
             onClick={() => setMobileMenuOpen(false)}
             className="block px-3 py-2.5 rounded-btn text-base font-medium text-cinema-muted hover:text-white hover:bg-cinema-surface"
           >
@@ -295,7 +295,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
                 </button>
               </>
             ) : (
-              <>
+              <div className="flex flex-col sm:hidden gap-2">
                 <Link
                   to="/login"
                   onClick={() => setMobileMenuOpen(false)}
@@ -310,7 +310,7 @@ export const Navbar: React.FC<NavbarProps> = () => {
                 >
                   Book Tickets
                 </a>
-              </>
+              </div>
             )}
           </div>
         </div>
