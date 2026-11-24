@@ -1,6 +1,8 @@
 import os
 import tempfile
 import uuid
+from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from pathlib import Path
 
 database_path = Path(tempfile.gettempdir()) / f"cinego-test-{uuid.uuid4().hex}.db"
@@ -13,14 +15,24 @@ os.environ["CORS_ORIGINS"] = "http://localhost:3000"
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
+from sqlalchemy import DateTime, event
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.config import Settings
-from app.db import Base, engine
+from app.db import Base, SessionLocal, engine
 from app.main import app
-from app.models import User
-from app.schemas import RegisterRequest
+from app.models import Cinema, FoodItem, Hall, Movie, OrderItem, Seat, SeatHold, Showtime, User
+from app.schemas import OrderItemOut, RegisterRequest
 from app.security import hash_password, sign_ticket, verify_password, verify_ticket_token
+
+
+@event.listens_for(Base, "load", propagate=True)
+def _sqlite_datetime_timezone_utc(target, context):
+    for col in target.__table__.columns:
+        if isinstance(col.type, DateTime) and getattr(target, col.name, None) is not None:
+            val = getattr(target, col.name)
+            if isinstance(val, datetime) and val.tzinfo is None:
+                setattr(target, col.name, val.replace(tzinfo=timezone.utc))
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -158,3 +170,171 @@ def test_production_configuration_rejects_wildcard_cors() -> None:
             qr_signing_secret="test-qr-signing-secret-at-least-32",
             cors_origins=["*"],
         )
+
+
+def test_order_item_out_from_orm_attributes() -> None:
+    item_id = uuid.uuid4()
+    ref_id = uuid.uuid4()
+    order_id = uuid.uuid4()
+    orm_item = OrderItem(
+        id=item_id,
+        order_id=order_id,
+        item_type="food",
+        ref_id=ref_id,
+        quantity=3,
+        unit_price=Decimal("45000"),
+        amount=Decimal("135000"),
+    )
+    validated = OrderItemOut.model_validate(orm_item)
+    assert validated.id == item_id
+    assert validated.item_type == "food"
+    assert validated.ref_id == ref_id
+    assert validated.quantity == 3
+    assert validated.unit_price == Decimal("45000")
+    assert validated.amount == Decimal("135000")
+
+
+def test_create_order_with_food_items_and_get_orders() -> None:
+    customer_email = f"order-food-{uuid.uuid4().hex[:8]}@example.com"
+    password = "StrongPassword123"
+    with TestClient(app) as client:
+        register_res = client.post(
+            "/api/v1/auth/register",
+            json={
+                "full_name": "Food Customer",
+                "email": customer_email,
+                "phone": "+84987654321",
+                "password": password,
+                "password_confirmation": password,
+            },
+        )
+        assert register_res.status_code == 201
+        customer_id = uuid.UUID(register_res.json()["id"])
+
+        login_res = client.post(
+            "/api/v1/auth/login",
+            json={"email": customer_email, "password": password},
+        )
+        assert login_res.status_code == 200
+        auth_headers = {"Authorization": f"Bearer {login_res.json()['access_token']}"}
+
+        now = datetime.now(timezone.utc)
+        with SessionLocal() as db:
+            movie = Movie(
+                title=f"Movie {uuid.uuid4().hex[:6]}",
+                duration_minutes=120,
+                status="now_showing",
+            )
+            cinema = Cinema(name=f"Cinema {uuid.uuid4().hex[:6]}", address="123 Cinema Way", status="active")
+            db.add_all([movie, cinema])
+            db.flush()
+
+            hall = Hall(
+                cinema_id=cinema.id,
+                name="Hall A",
+                hall_type="standard",
+                rows_count=5,
+                columns_count=5,
+                status="active",
+            )
+            db.add(hall)
+            db.flush()
+
+            seat = Seat(
+                hall_id=hall.id,
+                row_label="B",
+                seat_number=3,
+                seat_type="standard",
+                price_modifier=Decimal("0"),
+                status="active",
+            )
+            food1 = FoodItem(
+                name="Bắp rang bơ phô mai",
+                category="Bắp",
+                price=Decimal("65000"),
+                stock=50,
+                status="active",
+            )
+            food2 = FoodItem(
+                name="Coca-Cola L",
+                category="Nước",
+                price=Decimal("35000"),
+                stock=50,
+                status="active",
+            )
+            db.add_all([seat, food1, food2])
+            db.flush()
+
+            showtime = Showtime(
+                movie_id=movie.id,
+                hall_id=hall.id,
+                start_at=now + timedelta(days=1),
+                end_at=now + timedelta(days=1, hours=2),
+                base_price=Decimal("80000"),
+                status="scheduled",
+            )
+            db.add(showtime)
+            db.flush()
+
+            hold = SeatHold(
+                showtime_id=showtime.id,
+                seat_id=seat.id,
+                user_id=customer_id,
+                expires_at=now + timedelta(minutes=10),
+            )
+            db.add(hold)
+            db.commit()
+
+            showtime_id = str(showtime.id)
+            seat_id = str(seat.id)
+            food1_id = str(food1.id)
+            food2_id = str(food2.id)
+
+        # POST /orders with food_items -> 201 Created and items contains the food items
+        order_payload = {
+            "showtime_id": showtime_id,
+            "seat_ids": [seat_id],
+            "food_items": [
+                {"food_item_id": food1_id, "quantity": 2},
+                {"food_item_id": food2_id, "quantity": 1},
+            ],
+        }
+        create_res = client.post("/api/v1/orders", json=order_payload, headers=auth_headers)
+        assert create_res.status_code == 201, create_res.text
+        order_data = create_res.json()
+
+        assert order_data["showtime_id"] == showtime_id
+        assert order_data["seat_ids"] == [seat_id]
+        assert len(order_data["items"]) == 2
+
+        items_by_ref = {item["ref_id"]: item for item in order_data["items"]}
+        assert food1_id in items_by_ref
+        assert items_by_ref[food1_id]["item_type"] == "food"
+        assert items_by_ref[food1_id]["quantity"] == 2
+        assert Decimal(str(items_by_ref[food1_id]["unit_price"])) == Decimal("65000")
+        assert Decimal(str(items_by_ref[food1_id]["amount"])) == Decimal("130000")
+
+        assert food2_id in items_by_ref
+        assert items_by_ref[food2_id]["item_type"] == "food"
+        assert items_by_ref[food2_id]["quantity"] == 1
+        assert Decimal(str(items_by_ref[food2_id]["unit_price"])) == Decimal("35000")
+        assert Decimal(str(items_by_ref[food2_id]["amount"])) == Decimal("35000")
+
+        # Subtotal & Total = 80000 (seat) + 130000 (food1) + 35000 (food2) = 245000
+        assert Decimal(str(order_data["subtotal"])) == Decimal("245000")
+        assert Decimal(str(order_data["total"])) == Decimal("245000")
+
+        # GET /orders -> 200 OK and items contains the food items
+        list_res = client.get("/api/v1/orders", headers=auth_headers)
+        assert list_res.status_code == 200
+        orders_list = list_res.json()
+        assert len(orders_list) >= 1
+        matched_order = next((o for o in orders_list if o["id"] == order_data["id"]), None)
+        assert matched_order is not None
+        assert len(matched_order["items"]) == 2
+        list_items_by_ref = {item["ref_id"]: item for item in matched_order["items"]}
+        assert food1_id in list_items_by_ref
+        assert list_items_by_ref[food1_id]["quantity"] == 2
+        assert food2_id in list_items_by_ref
+        assert list_items_by_ref[food2_id]["quantity"] == 1
+

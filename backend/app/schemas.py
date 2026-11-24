@@ -199,6 +199,7 @@ class OrderCreateRequest(BaseModel):
 
 
 class OrderItemOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     id: uuid.UUID
     item_type: str
     ref_id: uuid.UUID

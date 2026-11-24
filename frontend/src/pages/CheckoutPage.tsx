@@ -28,6 +28,7 @@ import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import AmbientEffects from '../components/effects/AmbientEffects';
 import EmptyState from '../components/ui/EmptyState';
+import ErrorState from '../components/ui/ErrorState';
 import { useBookingStore } from '../store/bookingStore';
 import { releaseHold } from '../api/booking';
 import {
@@ -50,6 +51,25 @@ function generateIdempotencyKey(): string {
 export const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const { showtime, selectedSeats, holdIds, expiresAt, reset } = useBookingStore();
+
+  // Wait for persist rehydration before deciding whether to redirect
+  const [hasHydrated, setHasHydrated] = useState(() => {
+    return useBookingStore.persist?.hasHydrated ? useBookingStore.persist.hasHydrated() : true;
+  });
+
+  useEffect(() => {
+    if (!useBookingStore.persist?.hasHydrated) return;
+    if (useBookingStore.persist.hasHydrated()) {
+      setHasHydrated(true);
+      return;
+    }
+    const unsub = useBookingStore.persist.onFinishHydration(() => {
+      setHasHydrated(true);
+    });
+    return () => {
+      unsub();
+    };
+  }, []);
 
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [expiredShowtimeId, setExpiredShowtimeId] = useState<string | null>(null);
@@ -86,26 +106,53 @@ export const CheckoutPage: React.FC = () => {
       const now = Date.now();
       const diff = Math.max(0, Math.floor((target - now) / 1000));
       setTimeLeft(diff);
-
-      if (diff === 0 && !expiredShowtimeId && showtime) {
-        setExpiredShowtimeId(showtime.id);
-        reset();
-      }
     };
 
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [expiresAt, expiredShowtimeId, showtime, reset]);
+  }, [expiresAt]);
 
-  const isExpired = timeLeft !== null && timeLeft <= 0;
+  const isExpired = useMemo(() => {
+    if (timeLeft !== null) {
+      return timeLeft <= 0;
+    }
+    if (expiresAt) {
+      return new Date(expiresAt).getTime() <= Date.now();
+    }
+    return false;
+  }, [timeLeft, expiresAt]);
 
-  // 2. Redirect to home if there are no holdIds in store and it wasn't due to expiration
+  const hasSeatIds = Boolean(selectedSeats && selectedSeats.length > 0);
+  const hasHoldIds = Boolean(holdIds && holdIds.length > 0);
+  const hasSeats = hasSeatIds && hasHoldIds;
+
+  const confirmDisabledReason = useMemo(() => {
+    if (!hasSeats) {
+      return 'Chưa có thông tin ghế hoặc mã giữ chỗ. Vui lòng chọn ghế trước.';
+    }
+    if (isExpired) {
+      return 'Thời gian giữ ghế đã hết hạn. Vui lòng quay lại chọn ghế.';
+    }
+    if (isCreatingOrder) {
+      return 'Đang gửi yêu cầu xác nhận đơn hàng...';
+    }
+    if (confirmedOrder) {
+      return 'Đơn hàng đã được xác nhận thành công.';
+    }
+    return '';
+  }, [hasSeats, isExpired, isCreatingOrder, confirmedOrder]);
+
+  const isConfirmDisabled = Boolean(confirmDisabledReason);
+
+  // 2. Redirect to home only after rehydration finishes, if there are no holdIds in store and it wasn't due to expiration
   useEffect(() => {
-    if (!expiredShowtimeId && (!holdIds || holdIds.length === 0)) {
+    if (!hasHydrated) return;
+    if (isExpired) return;
+    if (!holdIds || holdIds.length === 0) {
       navigate('/', { replace: true });
     }
-  }, [holdIds, expiredShowtimeId, navigate]);
+  }, [hasHydrated, holdIds, isExpired, navigate]);
 
   // 3. Fetch available food items
   const {
@@ -292,6 +339,22 @@ export const CheckoutPage: React.FC = () => {
     }, 0);
   }, [foodQuantities, foodItems]);
 
+  // While store is rehydrating from sessionStorage, show clean loading view
+  if (!hasHydrated) {
+    return (
+      <div className="relative min-h-screen bg-transparent text-cinema-text flex flex-col overflow-x-clip">
+        <Navbar />
+        <main className="relative z-10 flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex items-center justify-center">
+          <div className="flex items-center gap-3 text-cinema-muted text-sm">
+            <Loader2 className="w-5 h-5 animate-spin text-brand" />
+            <span>Đang tải thông tin đơn hàng...</span>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="relative min-h-screen bg-transparent text-cinema-text flex flex-col overflow-x-clip">
       <AmbientEffects
@@ -342,7 +405,8 @@ export const CheckoutPage: React.FC = () => {
                 Ghế của bạn đã tự động được giải phóng để nhường cho khách hàng khác. Vui lòng chọn lại ghế.
               </p>
               <Link
-                to={expiredShowtimeId ? `/showtimes/${expiredShowtimeId}/seats` : '/'}
+                to={showtime?.id ? `/showtimes/${showtime.id}/seats` : (expiredShowtimeId ? `/showtimes/${expiredShowtimeId}/seats` : '/')}
+                onClick={() => reset()}
                 className="mt-2 inline-block text-xs font-bold uppercase tracking-wider text-white underline hover:text-red-200 transition-colors"
               >
                 Quay lại chọn ghế
@@ -448,18 +512,16 @@ export const CheckoutPage: React.FC = () => {
                     <span>Đang tải danh sách bắp nước...</span>
                   </div>
                 ) : isFoodError ? (
-                  <div className="p-3 rounded-btn bg-white/5 border border-white/10 text-xs text-cinema-muted flex items-center justify-between">
-                    <span>Không thể tải danh mục bắp nước.</span>
-                    <button
-                      type="button"
-                      onClick={() => refetchFood()}
-                      className="text-brand font-bold underline cursor-pointer"
-                    >
-                      Thử lại
-                    </button>
-                  </div>
+                  <ErrorState
+                    title="Không thể tải danh sách bắp nước"
+                    message="Đã có lỗi xảy ra khi kết nối máy chủ để lấy thông tin bắp nước. Vui lòng thử lại."
+                    retryText="Tải lại bắp nước"
+                    onRetry={() => refetchFood()}
+                  />
                 ) : Object.keys(foodByCategory).length === 0 ? (
-                  <p className="text-xs text-cinema-muted py-2">Hiện chưa có món bắp nước nào khả dụng.</p>
+                  <div className="p-6 rounded-btn bg-white/5 border border-white/10 text-xs text-cinema-muted text-center py-8">
+                    Hiện chưa có bắp nước
+                  </div>
                 ) : (
                   <div className="space-y-4">
                     {Object.entries(foodByCategory).map(([category, items]) => (
@@ -644,29 +706,43 @@ export const CheckoutPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Confirm Order Button (Only before confirmation) */}
-                {!confirmedOrder && (
-                  <div className="pt-2">
-                    <button
-                      type="button"
-                      disabled={isExpired || isCreatingOrder}
-                      onClick={handleConfirmOrder}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-btn bg-brand hover:bg-brand-600 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-brand/30 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                {/* Confirm Order Button */}
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    disabled={isConfirmDisabled}
+                    onClick={handleConfirmOrder}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-btn bg-brand hover:bg-brand-600 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-brand/30 transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {isCreatingOrder ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Đang xác nhận đơn...</span>
+                      </>
+                    ) : confirmedOrder ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+                        <span>Đã xác nhận đơn hàng</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Xác nhận đơn hàng</span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Explanation text when button is disabled */}
+                  {confirmDisabledReason && (
+                    <p
+                      data-testid="confirm-disabled-reason"
+                      className="text-[11px] text-amber-300/90 mt-2 flex items-center gap-1.5 font-medium animate-fade-in"
                     >
-                      {isCreatingOrder ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          <span>Đang xác nhận đơn...</span>
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle2 className="w-4 h-4" />
-                          <span>Xác nhận đơn hàng</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                )}
+                      <Info className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+                      <span>{confirmDisabledReason}</span>
+                    </p>
+                  )}
+                </div>
               </div>
 
               {/* SECTION 6: Payment Methods & Simulation (Only unlocked after order is confirmed) */}

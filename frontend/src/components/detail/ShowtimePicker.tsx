@@ -4,6 +4,7 @@ import { MapPin, Ticket } from 'lucide-react';
 import { Movie } from '../../types/movie';
 import { useCinemas, useShowtimes } from '../../hooks/useMovies';
 import { useBookingStore } from '../../store/bookingStore';
+import { releaseHold } from '../../api/booking';
 import { formatCurrencyVND } from '../../utils/formatters';
 import {
   ShowtimeOption,
@@ -59,6 +60,17 @@ export const ShowtimePicker: React.FC<ShowtimePickerProps> = ({ movie }) => {
   const handleBookTickets = () => {
     if (!selection) return;
     const showtime = selection.option.showtime;
+    const currentStore = useBookingStore.getState();
+
+    // Khi chọn suất chiếu MỚI (khác showtime.id trong store), reset toàn bộ store
+    // để không lẫn ghế/giá của lần đặt trước
+    if (currentStore.showtime?.id !== showtime.id) {
+      if (currentStore.holdIds && currentStore.holdIds.length > 0) {
+        Promise.allSettled(currentStore.holdIds.map((id) => releaseHold(id)));
+      }
+      currentStore.reset();
+    }
+
     useBookingStore.getState().setShowtime({
       id: showtime.id,
       movieTitle: movie.title,

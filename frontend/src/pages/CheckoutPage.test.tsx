@@ -62,7 +62,7 @@ describe('CheckoutPage', () => {
     cleanup();
   });
 
-  it('redirects to home if holdIds is empty', () => {
+  it('redirects to home if holdIds is empty after hydration', () => {
     render(
       <QueryClientProvider client={queryClient}>
         <MemoryRouter initialEntries={['/checkout']}>
@@ -113,6 +113,130 @@ describe('CheckoutPage', () => {
     });
   });
 
+  it('button "Xác nhận đơn" is ENABLED even without food, without voucher, and while food is loading or errored', async () => {
+    // Simulate pending food query
+    (ordersApi.listFood as any).mockImplementation(() => new Promise(() => {}));
+
+    useBookingStore.getState().setShowtime(mockShowtime);
+    useBookingStore.getState().setSelectedSeats(mockSeats);
+    useBookingStore.getState().setHolds(
+      ['hold-1', 'hold-2'],
+      new Date(Date.now() + 5 * 60 * 1000).toISOString()
+    );
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/checkout']}>
+          <Routes>
+            <Route path="/" element={<div>Home Page</div>} />
+            <Route path="/checkout" element={<CheckoutPage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    // Button must be enabled!
+    const confirmBtn = screen.getByRole('button', { name: /Xác nhận đơn hàng/i }) as HTMLButtonElement;
+    expect(confirmBtn.disabled).toBe(false);
+    expect(screen.queryByTestId('confirm-disabled-reason')).toBeNull();
+  });
+
+  it('button is DISABLED with explanation when seat hold is expired without redirecting to home', async () => {
+    (ordersApi.listFood as any).mockResolvedValue([]);
+
+    useBookingStore.getState().setShowtime(mockShowtime);
+    useBookingStore.getState().setSelectedSeats(mockSeats);
+    // Expired in past
+    useBookingStore.getState().setHolds(
+      ['hold-1', 'hold-2'],
+      new Date(Date.now() - 10000).toISOString()
+    );
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/checkout']}>
+          <Routes>
+            <Route path="/" element={<div>Home Page</div>} />
+            <Route path="/checkout" element={<CheckoutPage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    const confirmBtn = screen.getByRole('button', { name: /Xác nhận đơn hàng/i }) as HTMLButtonElement;
+    expect(confirmBtn.disabled).toBe(true);
+
+    const reasonEl = screen.getByTestId('confirm-disabled-reason');
+    expect(reasonEl.textContent).toContain('Thời gian giữ ghế đã hết hạn. Vui lòng quay lại chọn ghế.');
+  });
+
+  it('displays ErrorState when GET /food fails and allows retry without disabling confirm button', async () => {
+    (ordersApi.listFood as any).mockRejectedValue(new Error('Network error'));
+
+    useBookingStore.getState().setShowtime(mockShowtime);
+    useBookingStore.getState().setSelectedSeats(mockSeats);
+    useBookingStore.getState().setHolds(
+      ['hold-1', 'hold-2'],
+      new Date(Date.now() + 5 * 60 * 1000).toISOString()
+    );
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/checkout']}>
+          <Routes>
+            <Route path="/" element={<div>Home Page</div>} />
+            <Route path="/checkout" element={<CheckoutPage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Không thể tải danh sách bắp nước')).toBeDefined();
+      expect(screen.getByRole('button', { name: /Tải lại bắp nước/i })).toBeDefined();
+    });
+
+    // Confirm button must remain enabled despite food error
+    const confirmBtn = screen.getByRole('button', { name: /Xác nhận đơn hàng/i }) as HTMLButtonElement;
+    expect(confirmBtn.disabled).toBe(false);
+
+    // Clicking retry calls listFood again
+    (ordersApi.listFood as any).mockResolvedValue([
+      { id: 'food-1', name: 'Bắp rang bơ M', category: 'Bắp', price: 45000, image_url: null },
+    ]);
+    fireEvent.click(screen.getByRole('button', { name: /Tải lại bắp nước/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Bắp rang bơ M')).toBeDefined();
+    });
+  });
+
+  it('displays "Hiện chưa có bắp nước" when GET /food returns empty array', async () => {
+    (ordersApi.listFood as any).mockResolvedValue([]);
+
+    useBookingStore.getState().setShowtime(mockShowtime);
+    useBookingStore.getState().setSelectedSeats(mockSeats);
+    useBookingStore.getState().setHolds(
+      ['hold-1', 'hold-2'],
+      new Date(Date.now() + 5 * 60 * 1000).toISOString()
+    );
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/checkout']}>
+          <Routes>
+            <Route path="/" element={<div>Home Page</div>} />
+            <Route path="/checkout" element={<CheckoutPage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Hiện chưa có bắp nước')).toBeDefined();
+    });
+  });
+
   it('handles voucher invalid error 422 cleanly without crashing', async () => {
     (ordersApi.listFood as any).mockResolvedValue([]);
     (ordersApi.createOrder as any).mockRejectedValue({
@@ -133,6 +257,7 @@ describe('CheckoutPage', () => {
       <QueryClientProvider client={queryClient}>
         <MemoryRouter initialEntries={['/checkout']}>
           <Routes>
+            <Route path="/" element={<div>Home Page</div>} />
             <Route path="/checkout" element={<CheckoutPage />} />
           </Routes>
         </MemoryRouter>
@@ -154,7 +279,7 @@ describe('CheckoutPage', () => {
     });
   });
 
-  it('confirms order, locks editing, and enables payment', async () => {
+  it('confirms order, disables confirm button with reason, locks editing, and enables payment', async () => {
     (ordersApi.listFood as any).mockResolvedValue([]);
     (ordersApi.createOrder as any).mockResolvedValue({
       id: 'order-123',
@@ -181,19 +306,28 @@ describe('CheckoutPage', () => {
       <QueryClientProvider client={queryClient}>
         <MemoryRouter initialEntries={['/checkout']}>
           <Routes>
+            <Route path="/" element={<div>Home Page</div>} />
             <Route path="/checkout" element={<CheckoutPage />} />
           </Routes>
         </MemoryRouter>
       </QueryClientProvider>
     );
 
-    const confirmBtn = screen.getByRole('button', { name: /Xác nhận đơn hàng/i });
+    const confirmBtn = screen.getByRole('button', { name: /Xác nhận đơn hàng/i }) as HTMLButtonElement;
+    expect(confirmBtn.disabled).toBe(false);
     fireEvent.click(confirmBtn);
 
     await waitFor(() => {
       expect(screen.getByText(/CG12345678/)).toBeDefined();
       expect(screen.getByText('Chọn phương thức thanh toán')).toBeDefined();
       expect(screen.getByRole('button', { name: /Thanh toán/i })).toBeDefined();
+
+      // Confirm button is now disabled with reason
+      const disabledConfirmBtn = screen.getByRole('button', { name: /Đã xác nhận đơn hàng/i }) as HTMLButtonElement;
+      expect(disabledConfirmBtn.disabled).toBe(true);
+
+      const reasonEl = screen.getByTestId('confirm-disabled-reason');
+      expect(reasonEl.textContent).toContain('Đơn hàng đã được xác nhận thành công.');
     });
   });
 
@@ -232,6 +366,7 @@ describe('CheckoutPage', () => {
       <QueryClientProvider client={queryClient}>
         <MemoryRouter initialEntries={['/checkout']}>
           <Routes>
+            <Route path="/" element={<div>Home Page</div>} />
             <Route path="/tickets" element={<div>My Tickets Page</div>} />
             <Route path="/checkout" element={<CheckoutPage />} />
           </Routes>

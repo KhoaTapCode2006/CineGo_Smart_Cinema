@@ -49,28 +49,44 @@ export const SeatSelectionPage: React.FC = () => {
   const {
     showtime,
     selectedSeats,
+    holdIds,
     toggleSeat,
     setSelectedSeats,
     setHolds,
-    holdIds,
-    clearHolds,
   } = useBookingStore();
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isHolding, setIsHolding] = useState(false);
   const [holdError, setHoldError] = useState<string | null>(null);
 
-  // If returning to seat selection with active holdIds for this showtime,
-  // release them to prevent self-conflict.
+  // If returning to seat selection with active holdIds for this showtime (e.g. Back from checkout),
+  // release them ONCE on mount to prevent self-conflict.
+  // It reads holdIds from store at mount time and will NOT run again when holdIds changes during the session.
+  // CRITICAL: Must NEVER release holds or clear holdIds on unmount when user proceeds to /checkout.
+  const cleanedUpOldHoldsRef = useRef(false);
+
   useEffect(() => {
-    if (showtime?.id === showtimeId && holdIds && holdIds.length > 0) {
-      const idsToRelease = [...holdIds];
-      clearHolds();
-      Promise.allSettled(idsToRelease.map((id) => releaseHold(id))).then(() => {
-        queryClient.invalidateQueries({ queryKey: ['seat-map', showtimeId] });
-      });
+    if (cleanedUpOldHoldsRef.current) return;
+    cleanedUpOldHoldsRef.current = true;
+
+    const initialStore = useBookingStore.getState();
+    if (initialStore.showtime?.id === showtimeId) {
+      if (initialStore.holdIds && initialStore.holdIds.length > 0) {
+        const idsToRelease = [...initialStore.holdIds];
+        initialStore.clearHolds();
+        Promise.allSettled(idsToRelease.map((id) => releaseHold(id))).then(() => {
+          queryClient.invalidateQueries({ queryKey: ['seat-map', showtimeId] });
+        });
+      }
+    } else if (initialStore.showtime && initialStore.showtime.id !== showtimeId) {
+      // Different showtime in store: release any holds and reset store to avoid carrying over old seats/prices
+      if (initialStore.holdIds && initialStore.holdIds.length > 0) {
+        const idsToRelease = [...initialStore.holdIds];
+        Promise.allSettled(idsToRelease.map((id) => releaseHold(id)));
+      }
+      initialStore.reset();
     }
-  }, [showtime?.id, showtimeId, holdIds, clearHolds, queryClient]);
+  }, [showtimeId, queryClient]);
 
   // Smart seat dialog state
   const [isSmartSeatOpen, setIsSmartSeatOpen] = useState(false);
@@ -246,6 +262,7 @@ export const SeatSelectionPage: React.FC = () => {
 
   // Check if any selected seat became sold/held on seatMapData change
   useEffect(() => {
+    if (isHolding || (holdIds && holdIds.length > 0)) return;
     if (!seatMapData?.seats || selectedSeats.length === 0) return;
     const unavailable: string[] = [];
     const valid: SelectedSeat[] = [];
@@ -263,7 +280,7 @@ export const SeatSelectionPage: React.FC = () => {
       setSelectedSeats(valid);
       showToast(`Ghế ${unavailable.join(', ')} không còn trống và đã được tự động bỏ chọn.`);
     }
-  }, [seatMapData, seatById, selectedSeats, setSelectedSeats, showToast]);
+  }, [seatMapData, seatById, selectedSeats, setSelectedSeats, showToast, isHolding, holdIds]);
 
   // Handle seat click
   const handleSeatClick = (seat: SeatItem) => {
@@ -338,7 +355,34 @@ export const SeatSelectionPage: React.FC = () => {
       const seatIds = selectedSeats.map((s) => s.id);
       const res = await holdSeats(showtimeId, seatIds);
 
+      // 1. setHolds(hold_ids, expires_at)
       setHolds(res.hold_ids, res.expires_at);
+
+      // 2. setSelectedSeats(đúng các ghế vừa giữ, giá lấy từ seat map hiện tại)
+      const heldSeatIds = res.seat_ids && res.seat_ids.length > 0 ? res.seat_ids : seatIds;
+      const updatedSeats: SelectedSeat[] = heldSeatIds.map((seatId) => {
+        const seat = seatById.get(seatId);
+        if (seat) {
+          return {
+            id: seat.id,
+            label: `${seat.row_label}${seat.seat_number}`,
+            price: seat.price,
+            seat_type: seat.seat_type,
+          };
+        }
+        const existing = selectedSeats.find((s) => s.id === seatId);
+        return (
+          existing || {
+            id: seatId,
+            label: seatId,
+            price: 0,
+            seat_type: 'standard',
+          }
+        );
+      });
+      setSelectedSeats(updatedSeats);
+
+      // 3. navigate('/checkout')
       navigate('/checkout');
     } catch (err: any) {
       const msg =
