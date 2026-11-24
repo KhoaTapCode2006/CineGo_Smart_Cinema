@@ -25,6 +25,7 @@ import {
   createSocketTicket,
   smartSeat,
   holdSeats,
+  releaseHold,
   SeatItem,
   SmartSeatResponse,
 } from '../api/booking';
@@ -51,11 +52,25 @@ export const SeatSelectionPage: React.FC = () => {
     toggleSeat,
     setSelectedSeats,
     setHolds,
+    holdIds,
+    clearHolds,
   } = useBookingStore();
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isHolding, setIsHolding] = useState(false);
   const [holdError, setHoldError] = useState<string | null>(null);
+
+  // If returning to seat selection with active holdIds for this showtime,
+  // release them to prevent self-conflict.
+  useEffect(() => {
+    if (showtime?.id === showtimeId && holdIds && holdIds.length > 0) {
+      const idsToRelease = [...holdIds];
+      clearHolds();
+      Promise.allSettled(idsToRelease.map((id) => releaseHold(id))).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['seat-map', showtimeId] });
+      });
+    }
+  }, [showtime?.id, showtimeId, holdIds, clearHolds, queryClient]);
 
   // Smart seat dialog state
   const [isSmartSeatOpen, setIsSmartSeatOpen] = useState(false);

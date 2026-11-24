@@ -26,7 +26,8 @@ export interface BookingState {
   setShowtime: (showtime: BookingShowtime | null) => void;
   setSelectedSeats: (seats: SelectedSeat[]) => void;
   toggleSeat: (seat: SelectedSeat) => void;
-  setHolds: (holdIds: string[], expiresAt: string) => void;
+  setHolds: (holdIds: string[], expiresAt: string | null) => void;
+  clearHolds: () => void;
   reset: () => void;
 }
 
@@ -65,6 +66,10 @@ export const useBookingStore = create<BookingState>()(
 
       setHolds: (holdIds, expiresAt) => {
         set({ holdIds, expiresAt });
+      },
+
+      clearHolds: () => {
+        set({ holdIds: [], expiresAt: null });
       },
 
       reset: () => {
