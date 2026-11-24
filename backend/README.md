@@ -322,6 +322,67 @@ The app exposes:
 - admin and customer routes are separated through permission-aware dependencies
 - production environment restricts open CORS and disables public docs
 
+## Dữ liệu demo (Demo Seeding)
+
+Backend cung cấp script `app.seed_demo` giúp khởi tạo toàn bộ dữ liệu mẫu phục vụ phát triển, thử nghiệm luồng đặt vé và kiểm thử frontend.
+
+### Hướng dẫn chạy
+
+Từ thư mục `backend`:
+
+```bash
+# Khởi tạo dữ liệu demo (tự động bỏ qua các bản ghi đã tồn tại)
+python -m app.seed_demo
+
+# Xóa sạch dữ liệu demo cũ và tạo lại từ đầu
+python -m app.seed_demo --reset
+```
+
+> **Lưu ý quan trọng**:
+> - Script có tính **idempotent**: chạy nhiều lần không tạo trùng lặp dữ liệu.
+> - Tham số `--reset` chỉ xóa an toàn dữ liệu demo được tạo bởi script (theo thứ tự khóa ngoại an toàn); **tuyệt đối không xóa hay thay đổi trạng thái của bảng phim (`movies`)**.
+> - Script sử dụng các phim có sẵn trạng thái `now_showing` trong database để tạo lịch chiếu.
+> - Toàn bộ quá trình chạy trong 1 transaction an toàn; nếu có lỗi sẽ tự động rollback.
+
+### Dữ liệu được khởi tạo
+
+1. **Tài khoản người dùng** (Mật khẩu chung: `Password123`):
+   | Email | Vai trò | Họ tên | Ghi chú |
+   |---|---|---|---|
+   | `admin@cinego.vn` | `admin` | CineGo Administrator | Quản trị hệ thống |
+   | `staff@cinego.vn` | `staff` | CineGo Staff | Nhân viên soát vé / check-in |
+   | `customer1@cinego.vn` | `customer` | Nguyễn Văn An | Khách hàng demo |
+   | `customer2@cinego.vn` | `customer` | Trần Thị Bình | Khách hàng demo |
+   | `customer3@cinego.vn` | `customer` | Lê Hoàng Nam | Đã có sẵn 1 đơn đặt vé & vé QR |
+
+2. **Rạp & Phòng chiếu**:
+   - `[DEMO] CineGo Landmark 81` (Hall 1, Hall 2)
+   - `[DEMO] CineGo Thủ Đức` (Hall 1, Hall 2)
+   - Mỗi phòng 6 hàng x 10 cột (55 ghế): Hàng A–C Standard (ghế A1 là Accessible), Hàng D–E VIP (+20.000đ), Hàng F gồm 5 ghế đôi Couple (+40.000đ).
+
+3. **Suất chiếu (Showtimes)**:
+   - Trong 7 ngày tới (tính từ ngày mai theo giờ `Asia/Ho_Chi_Minh`), mỗi phòng 4 suất chiếu/ngày: `10:00`, `13:30`, `17:00`, `20:30`.
+   - Giá vé cơ bản: `75.000đ` (suất trước 17:00) và `95.000đ` (suất từ 17:00).
+   - Xoay vòng phim từ danh sách `now_showing`; thời lượng kết thúc `end_at = start_at + duration_minutes + 15 phút`.
+
+4. **Bắp nước & Combo (FoodItems, tồn kho 500)**:
+   - Bắp: Bắp rang bơ M (45k), Bắp rang bơ L (55k), Bắp phô mai L (65k)
+   - Nước: Coca-Cola L (35k), Pepsi L (35k), Nước suối (20k)
+   - Combo: Combo 1 bắp + 1 nước (89k), Combo 1 bắp + 2 nước (109k)
+
+5. **Mã giảm giá (Vouchers)**:
+   | Mã Code | Loại | Giá trị | Điều kiện áp dụng | Mục đích test |
+   |---|---|---|---|---|
+   | `CINEGO10` | percent | 10% | Tối đa 50.000đ | Voucher % hợp lệ |
+   | `GIAM20K` | fixed | 20.000đ | Đơn hàng từ 150.000đ | Voucher số tiền cố định |
+   | `HETHAN` | percent | 15% | Đã hết hạn (ngày hôm qua) | Test voucher quá hạn (lỗi 422) |
+   | `HETLUOT` | fixed | 10.000đ | Lượt dùng giới hạn = 0 | Test voucher hết lượt (lỗi 422) |
+
+6. **Đơn hàng mẫu & Vé QR có sẵn**:
+   - Tạo sẵn 1 đơn hàng trạng thái `paid` cho `customer3@cinego.vn` ở suất chiếu ngày mai tại `[DEMO] CineGo Landmark 81 - Hall 1`.
+   - Đặt 2 ghế VIP (D5, D6) với 2 mã vé (`TK...`) kèm token QR hợp lệ (ký bằng `sign_ticket`).
+   - Có thể kiểm tra ngay trên trang "Vé của tôi" hoặc test cổng soát vé `POST /api/v1/staff/check-in`.
+
 ## Testing
 
 The repository includes a small API test suite under `backend/tests`.

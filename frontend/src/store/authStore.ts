@@ -6,10 +6,12 @@ export interface AuthState {
   access_token: string | null;
   user: UserPublic | null;
   expires_in: number | null;
+  token_expires_at: number | null;
   isAuthenticated: boolean;
   login: (data: TokenResponse) => void;
   logout: () => void;
   setUser: (user: UserPublic | null) => void;
+  isTokenExpired: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -18,13 +20,17 @@ export const useAuthStore = create<AuthState>()(
       access_token: null,
       user: null,
       expires_in: null,
+      token_expires_at: null,
       isAuthenticated: false,
 
       login: (data: TokenResponse) => {
+        const expiresInSec = typeof data.expires_in === 'number' ? data.expires_in : 1800;
+        const tokenExpiresAt = Date.now() + expiresInSec * 1000;
         set({
           access_token: data.access_token,
           user: data.user,
-          expires_in: data.expires_in,
+          expires_in: expiresInSec,
+          token_expires_at: tokenExpiresAt,
           isAuthenticated: true,
         });
       },
@@ -34,6 +40,7 @@ export const useAuthStore = create<AuthState>()(
           access_token: null,
           user: null,
           expires_in: null,
+          token_expires_at: null,
           isAuthenticated: false,
         });
       },
@@ -41,15 +48,29 @@ export const useAuthStore = create<AuthState>()(
       setUser: (user: UserPublic | null) => {
         set({
           user,
-          isAuthenticated: Boolean(user && get().access_token),
+          isAuthenticated: Boolean(user && get().access_token && !get().isTokenExpired()),
         });
+      },
+
+      isTokenExpired: () => {
+        const { token_expires_at } = get();
+        return Boolean(token_expires_at && Date.now() >= token_expires_at);
       },
     }),
     {
       name: 'cinego_token',
       onRehydrateStorage: () => (state) => {
         if (state) {
-          state.isAuthenticated = Boolean(state.access_token && state.user);
+          const isExpired = Boolean(state.token_expires_at && Date.now() >= state.token_expires_at);
+          if (isExpired) {
+            state.access_token = null;
+            state.user = null;
+            state.expires_in = null;
+            state.token_expires_at = null;
+            state.isAuthenticated = false;
+          } else {
+            state.isAuthenticated = Boolean(state.access_token && state.user);
+          }
         }
       },
     }

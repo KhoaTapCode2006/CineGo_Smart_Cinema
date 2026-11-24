@@ -1,7 +1,9 @@
 import React, { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MapPin, Ticket } from 'lucide-react';
 import { Movie } from '../../types/movie';
 import { useCinemas, useShowtimes } from '../../hooks/useMovies';
+import { useBookingStore } from '../../store/bookingStore';
 import { formatCurrencyVND } from '../../utils/formatters';
 import {
   ShowtimeOption,
@@ -26,12 +28,12 @@ function getOptionCaption({ showtime, state }: ShowtimeOption): string {
 }
 
 export const ShowtimePicker: React.FC<ShowtimePickerProps> = ({ movie }) => {
+  const navigate = useNavigate();
   const { data: showtimes, isLoading, isError, refetch } = useShowtimes(movie.id);
   const { data: cinemas = [] } = useCinemas();
 
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedShowtimeId, setSelectedShowtimeId] = useState<string | null>(null);
-  const [showBookingNotice, setShowBookingNotice] = useState(false);
 
   const days = useMemo(() => groupShowtimesByDay(showtimes ?? []), [showtimes]);
   const activeDay = days.find((day) => day.date === selectedDate) ?? days[0];
@@ -48,12 +50,24 @@ export const ShowtimePicker: React.FC<ShowtimePickerProps> = ({ movie }) => {
   const handleSelectDate = (date: string) => {
     setSelectedDate(date);
     setSelectedShowtimeId(null);
-    setShowBookingNotice(false);
   };
 
   const handleSelectShowtime = (showtimeId: string) => {
     setSelectedShowtimeId(showtimeId === selectedShowtimeId ? null : showtimeId);
-    setShowBookingNotice(false);
+  };
+
+  const handleBookTickets = () => {
+    if (!selection) return;
+    const showtime = selection.option.showtime;
+    useBookingStore.getState().setShowtime({
+      id: showtime.id,
+      movieTitle: movie.title,
+      cinemaName: selection.cinema.cinemaName,
+      hallName: showtime.hall_name,
+      startAt: showtime.start_at,
+      basePrice: Number(showtime.base_price),
+    });
+    navigate(`/showtimes/${showtime.id}/seats`);
   };
 
   return (
@@ -218,17 +232,12 @@ export const ShowtimePicker: React.FC<ShowtimePickerProps> = ({ movie }) => {
                 ) : (
                   <p className="text-sm text-slate-300">Select a showtime to book your seats</p>
                 )}
-                {showBookingNotice && selection && (
-                  <p role="status" className="mt-1 text-xs font-semibold text-brand-300">
-                    Seat selection isn't available yet.
-                  </p>
-                )}
               </div>
 
               <button
                 type="button"
                 disabled={!selection}
-                onClick={() => setShowBookingNotice(true)}
+                onClick={handleBookTickets}
                 className="inline-flex items-center justify-center gap-2 shrink-0 px-6 py-3 min-h-[44px] rounded-full bg-brand text-white font-bold text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-brand/30 transition-all duration-200 enabled:cursor-pointer enabled:hover:bg-brand-600 enabled:hover:shadow-brand/50 disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed"
               >
                 <Ticket className="w-4 h-4" />

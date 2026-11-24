@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useAuthStore } from './authStore';
 import { TokenResponse, UserPublic } from '../types/auth';
 
@@ -31,9 +31,13 @@ describe('authStore', () => {
     expect(state.isAuthenticated).toBe(false);
     expect(state.access_token).toBeNull();
     expect(state.user).toBeNull();
+    expect(state.token_expires_at).toBeNull();
   });
 
-  it('updates state on login', () => {
+  it('updates state on login and sets token_expires_at', () => {
+    const now = 1700000000000;
+    vi.spyOn(Date, 'now').mockReturnValue(now);
+
     useAuthStore.getState().login(mockTokenResponse);
 
     const state = useAuthStore.getState();
@@ -41,6 +45,25 @@ describe('authStore', () => {
     expect(state.access_token).toBe('mock-jwt-token-abc');
     expect(state.user).toEqual(mockUser);
     expect(state.expires_in).toBe(1800);
+    expect(state.token_expires_at).toBe(now + 1800 * 1000);
+    expect(state.isTokenExpired()).toBe(false);
+
+    vi.restoreAllMocks();
+  });
+
+  it('detects expired token via isTokenExpired', () => {
+    const now = 1700000000000;
+    vi.spyOn(Date, 'now').mockReturnValue(now);
+
+    useAuthStore.getState().login(mockTokenResponse);
+
+    // Fast-forward past expiry
+    vi.spyOn(Date, 'now').mockReturnValue(now + 1801 * 1000);
+
+    const state = useAuthStore.getState();
+    expect(state.isTokenExpired()).toBe(true);
+
+    vi.restoreAllMocks();
   });
 
   it('clears state on logout', () => {
@@ -53,6 +76,7 @@ describe('authStore', () => {
     expect(state.isAuthenticated).toBe(false);
     expect(state.access_token).toBeNull();
     expect(state.user).toBeNull();
+    expect(state.token_expires_at).toBeNull();
   });
 
   it('updates user via setUser', () => {
