@@ -247,6 +247,7 @@ class TicketOut(BaseModel):
     seat_label: str
     qr_token: str
     checked_in_at: datetime | None
+    poster_url: str | None = None
 
 
 class CheckInRequest(BaseModel):

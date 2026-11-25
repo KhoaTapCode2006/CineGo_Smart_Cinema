@@ -21,7 +21,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.config import Settings
 from app.db import Base, SessionLocal, engine
 from app.main import app
-from app.models import Cinema, FoodItem, Hall, Movie, OrderItem, Seat, SeatHold, Showtime, User
+from app.models import Cinema, FoodItem, Hall, Movie, Order, OrderItem, Payment, Seat, SeatHold, Showtime, Ticket, User
 from app.schemas import OrderItemOut, RegisterRequest
 from app.security import hash_password, sign_ticket, verify_password, verify_ticket_token
 
@@ -337,4 +337,118 @@ def test_create_order_with_food_items_and_get_orders() -> None:
         assert list_items_by_ref[food1_id]["quantity"] == 2
         assert food2_id in list_items_by_ref
         assert list_items_by_ref[food2_id]["quantity"] == 1
+
+
+def test_tickets_endpoints_include_poster_url() -> None:
+    customer_email = f"ticket-poster-{uuid.uuid4().hex[:8]}@example.com"
+    password = "StrongPassword123"
+    with TestClient(app) as client:
+        register_res = client.post(
+            "/api/v1/auth/register",
+            json={
+                "full_name": "Poster Customer",
+                "email": customer_email,
+                "phone": "+84911223344",
+                "password": password,
+                "password_confirmation": password,
+            },
+        )
+        assert register_res.status_code == 201
+        customer_id = uuid.UUID(register_res.json()["id"])
+
+        login_res = client.post(
+            "/api/v1/auth/login",
+            json={"email": customer_email, "password": password},
+        )
+        assert login_res.status_code == 200
+        auth_headers = {"Authorization": f"Bearer {login_res.json()['access_token']}"}
+
+        now = datetime.now(timezone.utc)
+        sample_poster = "https://image.tmdb.org/t/p/w500/sample-poster.jpg"
+        with SessionLocal() as db:
+            movie = Movie(
+                title=f"Movie With Poster {uuid.uuid4().hex[:6]}",
+                duration_minutes=120,
+                status="now_showing",
+                poster_url=sample_poster,
+            )
+            cinema = Cinema(name=f"Cinema {uuid.uuid4().hex[:6]}", address="456 Movie Blvd", status="active")
+            db.add_all([movie, cinema])
+            db.flush()
+
+            hall = Hall(
+                cinema_id=cinema.id,
+                name="Hall 1",
+                hall_type="standard",
+                rows_count=5,
+                columns_count=5,
+                status="active",
+            )
+            db.add(hall)
+            db.flush()
+
+            seat = Seat(
+                hall_id=hall.id,
+                row_label="C",
+                seat_number=7,
+                seat_type="standard",
+                price_modifier=Decimal("0"),
+                status="sold",
+            )
+            db.add(seat)
+            db.flush()
+
+            showtime = Showtime(
+                movie_id=movie.id,
+                hall_id=hall.id,
+                start_at=now + timedelta(days=2),
+                end_at=now + timedelta(days=2, hours=2),
+                base_price=Decimal("90000"),
+                status="scheduled",
+            )
+            db.add(showtime)
+            db.flush()
+
+            order = Order(
+                order_code=f"ORD-{uuid.uuid4().hex[:8].upper()}",
+                user_id=customer_id,
+                showtime_id=showtime.id,
+                subtotal=Decimal("90000"),
+                discount=Decimal("0"),
+                total=Decimal("90000"),
+                payment_status="paid",
+                order_status="confirmed",
+            )
+            db.add(order)
+            db.flush()
+
+            ticket = Ticket(
+                ticket_code=f"TK-{uuid.uuid4().hex[:8].upper()}",
+                order_id=order.id,
+                showtime_id=showtime.id,
+                seat_id=seat.id,
+                status="issued",
+            )
+            db.add(ticket)
+            db.commit()
+
+            ticket_code = ticket.ticket_code
+
+        # Test list endpoint: GET /api/v1/tickets
+        list_res = client.get("/api/v1/tickets", headers=auth_headers)
+        assert list_res.status_code == 200
+        tickets_data = list_res.json()
+        assert len(tickets_data) == 1
+        assert "poster_url" in tickets_data[0]
+        assert tickets_data[0]["poster_url"] == sample_poster
+        assert tickets_data[0]["ticket_code"] == ticket_code
+
+        # Test detail endpoint: GET /api/v1/tickets/{ticket_code}
+        detail_res = client.get(f"/api/v1/tickets/{ticket_code}", headers=auth_headers)
+        assert detail_res.status_code == 200
+        detail_data = detail_res.json()
+        assert "poster_url" in detail_data
+        assert detail_data["poster_url"] == sample_poster
+        assert detail_data["ticket_code"] == ticket_code
+
 

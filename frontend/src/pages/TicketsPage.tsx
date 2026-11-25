@@ -1,7 +1,17 @@
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Ticket, Calendar, MapPin, QrCode, X, CheckCircle2, AlertCircle } from 'lucide-react';
+import {
+  Ticket,
+  Calendar,
+  MapPin,
+  QrCode,
+  X,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  Film,
+} from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
@@ -9,7 +19,7 @@ import AmbientEffects from '../components/effects/AmbientEffects';
 import EmptyState from '../components/ui/EmptyState';
 import ErrorState from '../components/ui/ErrorState';
 import { getMyTickets, getTicketDetail, TicketItem } from '../api/tickets';
-import { formatVietnamDateTime } from '../utils/formatters';
+import { formatVietnamDateTime, formatVietnamTicketDate } from '../utils/formatters';
 import { cn } from '../utils/cn';
 
 const getStatusBadge = (status: string) => {
@@ -125,25 +135,42 @@ export const TicketsPage: React.FC = () => {
       <Navbar />
 
       <main className="relative z-10 flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
-        <div className="mb-8">
-          <span className="text-xs font-bold uppercase tracking-widest text-brand mb-1 block">
-            CineGo Customer
-          </span>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
-            Vé của tôi (My Tickets)
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm text-cinema-muted">
-            Quản lý các vé xem phim đã thanh toán và xuất trình mã QR tại cổng soát vé.
-          </p>
+        {/* Tiêu đề trang với film strip mờ trang trí phía sau */}
+        <div className="relative mb-8 sm:mb-10">
+          <div
+            className="absolute -top-8 left-1/2 -translate-x-1/2 w-screen max-w-7xl h-48 sm:h-56 pointer-events-none overflow-hidden z-0 select-none opacity-15 sm:opacity-25"
+            aria-hidden="true"
+          >
+            <img
+              src="/hero/film-strip-blur.webp"
+              alt=""
+              className="w-full h-full object-cover object-center mix-blend-screen hidden sm:block"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-cinema-dark" />
+          </div>
+
+          <div className="relative z-10">
+            <span className="text-xs font-extrabold uppercase tracking-widest text-brand mb-1.5 block">
+              CINEGO CUSTOMER
+            </span>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">
+              Vé của tôi
+            </h1>
+            <p className="mt-1.5 text-xs sm:text-sm text-cinema-muted">
+              Quản lý các vé xem phim đã thanh toán và xuất trình mã QR tại cổng soát vé.
+            </p>
+            {/* Gạch ngang ngắn màu thương hiệu bên dưới */}
+            <div className="w-16 h-1 bg-gradient-to-r from-brand to-rose-400 rounded-full mt-3.5" />
+          </div>
         </div>
 
         {/* Thông báo nếu có vé mới vừa thanh toán */}
         {newTicketCodes.size > 0 && tickets.some((t) => newTicketCodes.has(t.ticket_code)) && (
-          <div className="mb-6 p-4 rounded-card bg-brand/15 border border-brand/30 flex items-center justify-between gap-3 text-sm text-white">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">🎉</span>
+          <div className="mb-6 p-4 rounded-card bg-brand/15 border border-brand/30 flex items-center justify-between gap-3 text-sm text-white shadow-lg backdrop-blur-md">
+            <div className="flex items-center gap-2.5">
+              <span className="text-2xl">🎉</span>
               <div>
-                <p className="font-bold">Đặt vé thành công!</p>
+                <p className="font-bold text-white">Đặt vé thành công!</p>
                 <p className="text-xs text-cinema-muted">
                   Các vé mới thanh toán của bạn đã được làm nổi bật bên dưới.
                 </p>
@@ -153,11 +180,11 @@ export const TicketsPage: React.FC = () => {
         )}
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 animate-pulse">
-            {Array.from({ length: 3 }).map((_, idx) => (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-pulse">
+            {Array.from({ length: 4 }).map((_, idx) => (
               <div
                 key={idx}
-                className="h-48 rounded-card bg-cinema-card/60 border border-cinema-border/50"
+                className="h-52 rounded-2xl bg-cinema-card/50 border border-cinema-border/50"
               />
             ))}
           </div>
@@ -177,91 +204,217 @@ export const TicketsPage: React.FC = () => {
             onAction={() => navigate('/')}
           />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {sortedTickets.map((ticket) => {
+          /* Lưới 2 cột ≥ 1024px, 1 cột trên mobile */
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {sortedTickets.map((ticket, index) => {
               const isNew = newTicketCodes.has(ticket.ticket_code);
               const badge = getStatusBadge(ticket.status);
               const BadgeIcon = badge.icon;
+              const isInactive = ticket.status === 'expired' || ticket.status === 'cancelled';
+              // Vé thứ lẻ (1st, 3rd, ...) tông xanh dương, vé thứ chẵn (2nd, 4th, ...) tông đỏ/hồng thương hiệu
+              const isEvenCard = index % 2 === 1;
+
+              const { time, date } = formatVietnamTicketDate(ticket.start_at);
+
+              // Tông màu: Xanh dương vs Đỏ/hồng
+              const themeBorder = isEvenCard ? 'border-rose-500/40' : 'border-cyan-500/40';
+              const themeGlow = isInactive
+                ? 'shadow-none hover:shadow-none'
+                : isNew
+                ? isEvenCard
+                  ? 'ring-2 ring-brand shadow-[0_0_38px_rgba(229,9,20,0.55)] border-brand'
+                  : 'ring-2 ring-cyan-400 shadow-[0_0_38px_rgba(6,182,212,0.55)] border-cyan-400'
+                : isEvenCard
+                ? 'shadow-[0_0_24px_rgba(244,63,94,0.18)] hover:shadow-[0_0_35px_rgba(244,63,94,0.3)] hover:border-rose-400/60'
+                : 'shadow-[0_0_24px_rgba(6,182,212,0.18)] hover:shadow-[0_0_35px_rgba(6,182,212,0.3)] hover:border-cyan-400/60';
+
+              const seatColor = isInactive
+                ? 'text-slate-400'
+                : isEvenCard
+                ? 'text-rose-400'
+                : 'text-cyan-400';
+
+              const qrBtnClass = isInactive
+                ? 'bg-white/10 hover:bg-white/15 text-slate-300 border border-white/15'
+                : isEvenCard
+                ? 'bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/35 hover:border-rose-400/60 hover:text-white'
+                : 'bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/35 hover:border-cyan-400/60 hover:text-white';
+
+              const notchBorderClass = isInactive
+                ? 'border-cinema-border/50'
+                : isEvenCard
+                ? 'border-rose-500/40'
+                : 'border-cyan-500/40';
 
               return (
                 <div
                   key={ticket.ticket_code}
                   className={cn(
-                    'rounded-card bg-cinema-card/80 border backdrop-blur-md p-5 flex flex-col justify-between transition-all duration-200 shadow-xl',
-                    isNew
-                      ? 'border-brand ring-2 ring-brand/40 shadow-brand/20 bg-brand/5'
-                      : 'border-cinema-border/90 hover:border-cinema-muted/50'
+                    'relative group transition-all duration-300',
+                    isInactive && 'opacity-60'
                   )}
                 >
-                  <div>
-                    {/* Header: Code, New badge & Vietnamese Status */}
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="font-mono text-xs font-bold text-slate-300 bg-white/10 px-2 py-0.5 rounded">
-                          {ticket.ticket_code}
-                        </span>
-                        {isNew && (
-                          <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-brand/20 text-brand border border-brand/50 animate-pulse flex items-center gap-0.5">
-                            ✨ Mới
+                  {/* Khoét tròn trái & phải ở giữa mép thẻ (notch) */}
+                  <div
+                    className={cn(
+                      'absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#0B0E1A] border z-20 transition-colors pointer-events-none',
+                      notchBorderClass
+                    )}
+                    aria-hidden="true"
+                  />
+                  <div
+                    className={cn(
+                      'absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#0B0E1A] border z-20 transition-colors pointer-events-none',
+                      notchBorderClass
+                    )}
+                    aria-hidden="true"
+                  />
+
+                  {/* Thẻ vé chính với nền tối trong suốt + backdrop-blur và viền phát sáng */}
+                  <div
+                    className={cn(
+                      'relative rounded-2xl bg-[#101426]/80 backdrop-blur-md border p-4 sm:p-5 flex flex-col justify-between transition-all duration-300',
+                      themeBorder,
+                      themeGlow
+                    )}
+                    style={{
+                      maskImage:
+                        'radial-gradient(circle 12px at 0% 50%, transparent 11px, black 12px), radial-gradient(circle 12px at 100% 50%, transparent 11px, black 12px)',
+                      WebkitMaskImage:
+                        'radial-gradient(circle 12px at 0% 50%, transparent 11px, black 12px), radial-gradient(circle 12px at 100% 50%, transparent 11px, black 12px)',
+                      maskComposite: 'intersect',
+                      WebkitMaskComposite: 'destination-in',
+                    }}
+                  >
+                    {/* Bố cục: Bên trái poster (2:3), Bên phải nội dung */}
+                    <div className="flex flex-col sm:flex-row items-stretch gap-4 sm:gap-5">
+                      {/* Bên trái: Poster phim tỉ lệ 2:3, bo góc (375px: responsive) */}
+                      <div className="w-24 sm:w-28 md:w-32 lg:w-36 shrink-0 aspect-[2/3] rounded-xl overflow-hidden self-start sm:self-center shadow-md relative bg-cinema-dark border border-white/10">
+                        {ticket.poster_url ? (
+                          <img
+                            src={ticket.poster_url}
+                            alt={ticket.movie_title}
+                            className="w-full h-full object-cover rounded-xl"
+                            loading="lazy"
+                            onError={(e) => {
+                              // Khi ảnh lỗi thì ẩn ảnh và hiển thị khối gradient
+                              e.currentTarget.style.display = 'none';
+                              const fallback = e.currentTarget.parentElement?.querySelector(
+                                '.poster-fallback'
+                              ) as HTMLElement;
+                              if (fallback) fallback.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className={cn(
+                            'poster-fallback w-full h-full rounded-xl bg-gradient-to-br from-[#1b213b] via-[#14182b] to-[#0c0f1d] flex flex-col items-center justify-center p-2 text-center text-cinema-muted',
+                            ticket.poster_url ? 'hidden' : 'flex'
+                          )}
+                        >
+                          <Film className="w-8 h-8 opacity-40 mb-1 text-cinema-muted" />
+                          <span className="text-[10px] font-semibold tracking-wider uppercase opacity-40">
+                            CineGo
                           </span>
-                        )}
-                      </div>
-                      <span
-                        className={cn(
-                          'text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded flex items-center gap-1 shrink-0',
-                          badge.className
-                        )}
-                      >
-                        <BadgeIcon className="w-3 h-3" />
-                        {badge.label}
-                      </span>
-                    </div>
-
-                    {/* Movie Title */}
-                    <h2 className="text-base sm:text-lg font-bold text-white line-clamp-2 leading-snug mb-2">
-                      {ticket.movie_title}
-                    </h2>
-
-                    {/* Cinema, Hall, Showtime & Checked-in info */}
-                    <div className="space-y-1.5 text-xs text-cinema-muted mb-4">
-                      <div className="flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-cinema-muted shrink-0" />
-                        <span className="truncate">
-                          {ticket.cinema_name} · {ticket.hall_name}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-cinema-muted shrink-0" />
-                        <span>{formatVietnamDateTime(ticket.start_at)}</span>
-                      </div>
-                      {ticket.checked_in_at && (
-                        <div className="flex items-center gap-1.5 text-blue-300/90">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                          <span>Đã check-in: {formatVietnamDateTime(ticket.checked_in_at)}</span>
                         </div>
-                      )}
-                    </div>
-                  </div>
+                      </div>
 
-                  {/* Seat & QR Action Button */}
-                  <div className="pt-3 border-t border-white/10 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] uppercase tracking-wider text-cinema-muted block">
-                        Ghế
-                      </span>
-                      <span className="text-lg font-black text-brand tracking-wide">
-                        {ticket.seat_label}
-                      </span>
-                    </div>
+                      {/* Bên phải: Badge, Tên phim, Giờ & Ngày, Rạp - Phòng, Ghế & QR */}
+                      <div className="flex-1 min-w-0 flex flex-col justify-between">
+                        <div>
+                          {/* Badge trạng thái (pill có icon) & Badge Mới */}
+                          <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span
+                                className={cn(
+                                  'text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full flex items-center gap-1.5 shrink-0',
+                                  badge.className
+                                )}
+                              >
+                                <BadgeIcon className="w-3.5 h-3.5" />
+                                {badge.label}
+                              </span>
+                              {isNew && (
+                                <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand/20 text-brand border border-brand/50 animate-pulse flex items-center gap-1 shadow-sm">
+                                  ✨ Mới
+                                </span>
+                              )}
+                            </div>
+                          </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setSelectedTicketCode(ticket.ticket_code)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-btn bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-all border border-white/15 cursor-pointer"
-                    >
-                      <QrCode className="w-3.5 h-3.5" />
-                      <span>Xem QR</span>
-                    </button>
+                          {/* Tên phim lớn, đậm */}
+                          <h2 className="text-lg sm:text-xl font-extrabold text-white line-clamp-2 leading-snug mb-2.5">
+                            {ticket.movie_title}
+                          </h2>
+
+                          {/* Hàng icon đồng hồ + giờ chiếu (HH:mm) và icon lịch + ngày "Thứ X, DD/MM/YYYY" */}
+                          <div className="space-y-1.5 text-xs text-cinema-muted">
+                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                              <div className="flex items-center gap-1.5 text-slate-200">
+                                <Clock className="w-3.5 h-3.5 text-cinema-muted shrink-0" />
+                                <span className="font-semibold">{time}</span>
+                              </div>
+                              <span className="text-white/20">|</span>
+                              <div className="flex items-center gap-1.5">
+                                <Calendar className="w-3.5 h-3.5 text-cinema-muted shrink-0" />
+                                <span>{date}</span>
+                              </div>
+                            </div>
+
+                            {/* Icon định vị + "Tên rạp - Phòng" */}
+                            <div className="flex items-center gap-1.5 text-cinema-muted truncate">
+                              <MapPin className="w-3.5 h-3.5 text-cinema-muted shrink-0" />
+                              <span className="truncate">
+                                {ticket.cinema_name} - {ticket.hall_name}
+                              </span>
+                            </div>
+
+                            {/* Thông tin check-in nếu đã check-in */}
+                            {ticket.checked_in_at && (
+                              <div className="flex items-center gap-1.5 text-blue-300/90 text-[11px] pt-0.5">
+                                <CheckCircle2 className="w-3 h-3 text-blue-400 shrink-0" />
+                                <span>
+                                  Đã check-in: {formatVietnamDateTime(ticket.checked_in_at)}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Đường kẻ ngang răng cưa / đục lỗ dạng dashed */}
+                        <div className="border-t-2 border-dashed border-white/15 my-3 relative" />
+
+                        {/* Hàng dưới: Nhãn GHẾ & số ghế lớn bên trái, Nút Xem QR bên phải */}
+                        <div className="flex items-end justify-between gap-3">
+                          <div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-cinema-muted block leading-tight">
+                              GHẾ
+                            </span>
+                            <span
+                              className={cn(
+                                'text-2xl sm:text-3xl font-black tracking-tight leading-none',
+                                seatColor
+                              )}
+                            >
+                              {ticket.seat_label}
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => setSelectedTicketCode(ticket.ticket_code)}
+                            className={cn(
+                              'inline-flex items-center justify-center gap-1.5 px-4 min-h-[44px] rounded-full text-xs font-bold transition-all duration-200 cursor-pointer shadow-md active:scale-95 shrink-0',
+                              qrBtnClass
+                            )}
+                          >
+                            <QrCode className="w-4 h-4" />
+                            <span>Xem QR</span>
+                            <span className="text-base font-bold leading-none">›</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               );
@@ -298,7 +451,9 @@ export const TicketsPage: React.FC = () => {
               ) : isDetailError && !activeTicket ? (
                 <div className="py-8">
                   <AlertCircle className="w-10 h-10 text-red-400 mx-auto mb-2" />
-                  <p className="text-sm font-semibold text-white mb-2">Không thể tải thông tin vé</p>
+                  <p className="text-sm font-semibold text-white mb-2">
+                    Không thể tải thông tin vé
+                  </p>
                   <button
                     type="button"
                     onClick={() => refetchDetail()}
@@ -334,7 +489,9 @@ export const TicketsPage: React.FC = () => {
                       <div className="text-xs text-cinema-muted space-y-1 mb-3">
                         <p>
                           {activeTicket.cinema_name} ·{' '}
-                          <span className="text-slate-300 font-medium">{activeTicket.hall_name}</span>
+                          <span className="text-slate-300 font-medium">
+                            {activeTicket.hall_name}
+                          </span>
                         </p>
                         <p>
                           Suất chiếu:{' '}
@@ -344,7 +501,9 @@ export const TicketsPage: React.FC = () => {
                         </p>
                         <p>
                           Ghế:{' '}
-                          <span className="font-bold text-brand text-sm">{activeTicket.seat_label}</span>
+                          <span className="font-bold text-brand text-sm">
+                            {activeTicket.seat_label}
+                          </span>
                         </p>
                         <p>
                           Thời gian check-in:{' '}
@@ -366,6 +525,7 @@ export const TicketsPage: React.FC = () => {
                         />
                       </div>
 
+                      {/* Mã vé (ticket_code) CHỈ hiện trong modal QR */}
                       <p className="font-mono text-sm font-bold text-slate-200 tracking-wider">
                         {activeTicket.ticket_code}
                       </p>

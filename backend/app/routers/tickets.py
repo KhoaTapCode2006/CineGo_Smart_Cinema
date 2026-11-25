@@ -31,6 +31,7 @@ def _ticket_response(db: Session, ticket: Ticket) -> TicketOut:
         seat_label=f"{seat.row_label}{seat.seat_number}",
         qr_token=sign_ticket(ticket.id),
         checked_in_at=ticket.checked_in_at,
+        poster_url=movie.poster_url,
     )
 
 

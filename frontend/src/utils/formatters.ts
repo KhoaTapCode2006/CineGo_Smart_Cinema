@@ -74,3 +74,43 @@ export function formatVietnamDateTime(isoString: string | null | undefined): str
   }
 }
 
+/**
+ * Format an ISO date string into Vietnam time (HH:mm) and localized ticket date ("Thứ X, DD/MM/YYYY").
+ */
+export function formatVietnamTicketDate(isoString: string | null | undefined): { time: string; date: string } {
+  if (!isoString) return { time: '', date: '' };
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return { time: '', date: String(isoString) };
+
+    const formatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      hourCycle: 'h23',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    const parts = formatter.formatToParts(d);
+    const map: Record<string, string> = {};
+    for (const part of parts) {
+      map[part.type] = part.value;
+    }
+
+    const vnLocaleString = d.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
+    const vnDate = new Date(vnLocaleString);
+    const dayOfWeek = vnDate.getDay();
+    const viWeekdays = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+    const weekdayName = viWeekdays[dayOfWeek];
+
+    return {
+      time: `${map.hour}:${map.minute}`,
+      date: `${weekdayName}, ${map.day}/${map.month}/${map.year}`,
+    };
+  } catch {
+    return { time: '', date: String(isoString) };
+  }
+}
+
+

@@ -38,10 +38,11 @@ const mockTickets: ticketsApi.TicketItem[] = [
     movie_title: 'Dune: Part Two',
     cinema_name: 'CineGo Landmark 81',
     hall_name: 'Hall 1',
-    start_at: '2026-11-25T12:00:00Z', // 19:00 VN
+    start_at: '2026-11-25T12:00:00Z', // 19:00 VN, Thứ 4, 25/11/2026
     seat_label: 'D5',
     qr_token: 'qr-token-issued-1234567890',
     checked_in_at: null,
+    poster_url: 'https://image.tmdb.org/t/p/w500/dune.jpg',
   },
   {
     ticket_code: 'TK_CHECKED_IN',
@@ -49,10 +50,11 @@ const mockTickets: ticketsApi.TicketItem[] = [
     movie_title: 'Lật Mặt 7',
     cinema_name: 'CineGo Thủ Đức',
     hall_name: 'Hall 2',
-    start_at: '2026-11-24T10:00:00Z', // 17:00 VN
+    start_at: '2026-11-24T10:00:00Z', // 17:00 VN, Thứ 3, 24/11/2026
     seat_label: 'F1',
     qr_token: 'qr-token-checked-1234567890',
     checked_in_at: '2026-11-24T09:45:00Z', // 16:45 VN
+    poster_url: null,
   },
   {
     ticket_code: 'TK_EXPIRED',
@@ -64,6 +66,7 @@ const mockTickets: ticketsApi.TicketItem[] = [
     seat_label: 'A1',
     qr_token: 'qr-token-expired-1234567890',
     checked_in_at: null,
+    poster_url: null,
   },
   {
     ticket_code: 'TK_CANCELLED',
@@ -75,6 +78,7 @@ const mockTickets: ticketsApi.TicketItem[] = [
     seat_label: 'B3',
     qr_token: 'qr-token-cancelled-1234567890',
     checked_in_at: null,
+    poster_url: null,
   },
 ];
 
@@ -101,23 +105,24 @@ describe('TicketsPage', () => {
 
     renderWithClient(<TicketsPage />);
 
-    // 1. ticket_code
-    expect(await screen.findByText('TK_ISSUED')).toBeDefined();
-    expect(screen.getByText('TK_CHECKED_IN')).toBeDefined();
-    expect(screen.getByText('TK_EXPIRED')).toBeDefined();
-    expect(screen.getByText('TK_CANCELLED')).toBeDefined();
+    // 1. ticket_code is NOT shown on the card
+    await screen.findByText('Dune: Part Two');
+    expect(screen.queryByText('TK_ISSUED')).toBeNull();
+    expect(screen.queryByText('TK_CHECKED_IN')).toBeNull();
 
     // 2. movie_title
     expect(screen.getByText('Dune: Part Two')).toBeDefined();
     expect(screen.getByText('Lật Mặt 7')).toBeDefined();
 
-    // 3 & 4. cinema_name & hall_name
-    expect(screen.getAllByText(/CineGo Landmark 81 · Hall 1/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/CineGo Thủ Đức · Hall 2/).length).toBeGreaterThan(0);
+    // 3 & 4. cinema_name & hall_name ("Tên rạp - Phòng")
+    expect(screen.getAllByText(/CineGo Landmark 81 - Hall 1/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/CineGo Thủ Đức - Hall 2/).length).toBeGreaterThan(0);
 
-    // 5. start_at in Vietnam timezone (25/11/2026 19:00 for 12:00:00Z)
-    expect(screen.getByText('25/11/2026 19:00')).toBeDefined();
-    expect(screen.getByText('24/11/2026 17:00')).toBeDefined();
+    // 5. start_at in Vietnam timezone (HH:mm & Thứ X, DD/MM/YYYY)
+    expect(screen.getByText('19:00')).toBeDefined();
+    expect(screen.getByText(/Thứ 4, 25\/11\/2026/)).toBeDefined();
+    expect(screen.getByText('17:00')).toBeDefined();
+    expect(screen.getByText(/Thứ 3, 24\/11\/2026/)).toBeDefined();
 
     // 6. seat_label
     expect(screen.getByText('D5')).toBeDefined();
@@ -177,11 +182,11 @@ describe('TicketsPage', () => {
 
     renderWithClient(<TicketsPage />);
 
-    await screen.findByText('TK_FUTURE_SOONEST');
+    await screen.findByText('Movie Soonest');
 
-    // Check DOM order of cards
-    const codes = screen.getAllByText(/^TK_/).map((el) => el.textContent);
-    expect(codes).toEqual(['TK_FUTURE_SOONEST', 'TK_FUTURE_LATER', 'TK_PAST']);
+    // Check DOM order of cards by movie title heading
+    const titles = screen.getAllByRole('heading', { level: 2 }).map((el) => el.textContent);
+    expect(titles).toEqual(['Movie Soonest', 'Movie Later', 'Movie Past']);
   });
 
   it('highlights tickets specified in ?new= query parameter', async () => {
@@ -189,7 +194,7 @@ describe('TicketsPage', () => {
 
     renderWithClient(<TicketsPage />, '/tickets?new=TK_ISSUED');
 
-    await screen.findByText('TK_ISSUED');
+    await screen.findByText('Dune: Part Two');
 
     // Success alert banner is displayed
     expect(screen.getByText('Đặt vé thành công!')).toBeDefined();
@@ -198,7 +203,7 @@ describe('TicketsPage', () => {
     expect(screen.getByText('✨ Mới')).toBeDefined();
   });
 
-  it('opens detail modal, calls GET /tickets/{ticket_code}, and displays large QR code with qr_token', async () => {
+  it('opens detail modal, calls GET /tickets/{ticket_code}, and displays large QR code with qr_token and ticket_code', async () => {
     vi.mocked(ticketsApi.getMyTickets).mockResolvedValueOnce(mockTickets);
 
     const detailedTicket: ticketsApi.TicketItem = {
@@ -209,7 +214,7 @@ describe('TicketsPage', () => {
 
     renderWithClient(<TicketsPage />);
 
-    await screen.findByText('TK_ISSUED');
+    await screen.findByText('Dune: Part Two');
 
     // Click "Xem QR" button for TK_ISSUED
     const qrButtons = screen.getAllByRole('button', { name: /xem qr/i });
@@ -224,6 +229,9 @@ describe('TicketsPage', () => {
       expect(ticketsApi.getTicketDetail).toHaveBeenCalledWith('TK_ISSUED');
     });
 
+    // Verify ticket_code is displayed in the modal
+    expect(await screen.findByText('TK_ISSUED')).toBeDefined();
+
     // Verify QR token is displayed in modal
     expect(await screen.findByText('fresh-qr-token-from-get-ticket-detail')).toBeDefined();
 
@@ -234,5 +242,17 @@ describe('TicketsPage', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).toBeNull();
     });
+  });
+
+  it('renders poster image when poster_url is provided, and fallback when poster_url is null', async () => {
+    vi.mocked(ticketsApi.getMyTickets).mockResolvedValueOnce(mockTickets);
+
+    renderWithClient(<TicketsPage />);
+
+    const poster = await screen.findByAltText('Dune: Part Two');
+    expect(poster.getAttribute('src')).toBe('https://image.tmdb.org/t/p/w500/dune.jpg');
+
+    // Fallback block for ticket without poster
+    expect(screen.getAllByText('CineGo').length).toBeGreaterThan(0);
   });
 });

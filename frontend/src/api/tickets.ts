@@ -10,6 +10,7 @@ export interface TicketItem {
   seat_label: string;
   qr_token: string;
   checked_in_at: string | null;
+  poster_url?: string | null;
 }
 
 export type TicketOut = TicketItem;
