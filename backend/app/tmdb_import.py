@@ -1,10 +1,13 @@
 import argparse
+import getpass
 import json
 import logging
 import math
+from pathlib import Path
 import re
 import sys
 import time
+import uuid
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any, Protocol
@@ -12,12 +15,15 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-from sqlalchemy import delete, select
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from sqlalchemy import create_engine, delete, select, text
+from sqlalchemy.engine import Engine, make_url
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.config import get_settings
-from app.db import SessionLocal
 from app.models import CastMember, Movie, MovieCast
 
 TMDB_API_BASE_URL = "https://api.themoviedb.org/3"
@@ -404,6 +410,11 @@ def store_movie(db: Session, record: MovieRecord) -> bool:
     if movie is None:
         movie = Movie(tmdb_id=record.tmdb_id, status="coming_soon")
         db.add(movie)
+        old_cast_ids: list[uuid.UUID] = []
+    else:
+        old_cast_ids = db.scalars(
+            select(MovieCast.cast_id).where(MovieCast.movie_id == movie.id)
+        ).all()
 
     movie.title = record.title
     movie.description = record.description
@@ -463,7 +474,37 @@ def store_movie(db: Session, record: MovieRecord) -> bool:
             for cast_record, member in links
         ]
     )
+    db.flush()
+    if old_cast_ids:
+        db.execute(
+            delete(CastMember).where(
+                CastMember.id.in_(old_cast_ids),
+                ~select(MovieCast.cast_id)
+                .where(MovieCast.cast_id == CastMember.id)
+                .exists(),
+            )
+        )
     return created
+
+
+def create_authenticated_session_factory(
+    database_url: str,
+    password: str,
+) -> tuple[Engine, sessionmaker[Session]]:
+    if not password:
+        raise ValueError("Supabase database password is required")
+    engine = create_engine(
+        make_url(database_url).set(password=password),
+        pool_pre_ping=True,
+        pool_recycle=300,
+    )
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+    except SQLAlchemyError:
+        engine.dispose()
+        raise
+    return engine, sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 
 def crawl_and_import(
@@ -532,10 +573,30 @@ def main() -> int:
     if token is None or not token.strip():
         logger.error("TMDB_API_READ_ACCESS_TOKEN is not configured")
         return 2
+    try:
+        database_password = getpass.getpass("Supabase database password: ")
+    except (EOFError, KeyboardInterrupt):
+        logger.error("Supabase database password is required")
+        return 1
+    if not database_password:
+        logger.error("Supabase database password is required")
+        return 1
+
     client = TMDBClient(token)
     try:
+        engine, session_factory = create_authenticated_session_factory(
+            settings.database_url,
+            database_password,
+        )
+    except (SQLAlchemyError, ValueError):
+        logger.error(
+            "Supabase database authentication failed; verify the database password and connection settings"
+        )
+        return 1
+
+    try:
         summary = crawl_and_import(
-            SessionLocal,
+            session_factory,
             client,
             pages=args.pages,
             language=args.language,
@@ -545,6 +606,8 @@ def main() -> int:
     except (TMDBProviderError, SQLAlchemyError, ValueError):
         logger.exception("TMDB movie import failed")
         return 1
+    finally:
+        engine.dispose()
     logger.info(
         "TMDB import complete: %s created, %s updated, %s skipped",
         summary.created,
